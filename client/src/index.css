@@ -675,6 +675,12 @@ canvas {
   border-left-color: #ff5a5a;
 }
 
+/* The compass narrows to stay clear of the menu bar on the right (and the matching space
+   on the left), however narrow the window. */
+[data-hud='compass'] {
+  width: min(620px, 60vw, calc(100vw - 2 * (360px * var(--hud-s) + var(--hud-gap)) - 24px));
+}
+
 /* Touch screens big enough for the full HUD (tablets, touch laptops): the touch controls
    shrink with the rest of the HUD and sit clear of the bottom row - the joystick above
    the money, the dig / jump / pick-up buttons above weather and luck. (Phones get their
@@ -848,8 +854,8 @@ canvas {
     font-size: 20px;
   }
   [data-hud='altbar'] {
-    height: 220px;
-    top: 46%;
+    height: 160px;
+    top: 44%;
   }
   [data-hud='backpack'] {
     bottom: 10px;
@@ -968,6 +974,13 @@ body:has([data-hud='drawer']) :is([data-hud='action'], [data-hud='jump'], [data-
 @keyframes hud-reveal {
   from {
     opacity: 0;
+  }
+}
+
+/* Landscape phones: the climb meter rides higher, clear of the JUMP button. */
+@media (max-height: 560px) and (orientation: landscape) {
+  [data-hud='altbar'] {
+    top: 30%;
   }
 }
 
