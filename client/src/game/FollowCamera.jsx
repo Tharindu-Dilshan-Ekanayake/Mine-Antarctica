@@ -109,8 +109,10 @@ export default function FollowCamera() {
       // A finger held down to dig steers the pickaxe, not the camera.
       if (cameraState.dragLocked) return
       cameraState.yaw -= dx * DRAG_SENSITIVITY
-      const first = cameraState.mode === 'first'
-      cameraState.pitch = Math.min(first ? FP_MAX_PITCH : MAX_PITCH, Math.max(first ? FP_MIN_PITCH : MIN_PITCH, cameraState.pitch + dy * DRAG_SENSITIVITY))
+      // Free look (all the way up and down) whenever the view is at your eyes: first
+      // person, or in a tunnel. The behind-you orbit keeps its narrower range.
+      const free = cameraState.mode === 'first' || cameraState.eyes
+      cameraState.pitch = Math.min(free ? FP_MAX_PITCH : MAX_PITCH, Math.max(free ? FP_MIN_PITCH : MIN_PITCH, cameraState.pitch + dy * DRAG_SENSITIVITY))
     }
 
     const endDrag = (e) => {
@@ -192,16 +194,20 @@ export default function FollowCamera() {
       camera.fov = 60
       camera.updateProjectionMatrix()
     }
-    // Back from first person: looking up isn't something the orbit camera does.
-    if (cameraState.pitch < MIN_PITCH) cameraState.pitch = MIN_PITCH
-    if (cameraState.pitch > MAX_PITCH) cameraState.pitch = MAX_PITCH
+    // Fully back out in the open: the orbit camera's narrower up/down range again. (While
+    // the view is at your eyes - or still gliding there or back - the look is left alone.)
+    if (!cameraState.eyes && tunnelBlend.current <= 0) {
+      if (cameraState.pitch < MIN_PITCH) cameraState.pitch = MIN_PITCH
+      if (cameraState.pitch > MAX_PITCH) cameraState.pitch = MAX_PITCH
+    }
+    const orbitPitch = Math.min(MAX_PITCH, Math.max(MIN_PITCH, cameraState.pitch))
 
     _target.set(localPlayer.x, localPlayer.y + LOOK_HEIGHT, localPlayer.z)
     const { yaw, distance } = cameraState
     // Underground (rock right overhead): look along the tunnel, not up into its roof,
     // so you see how far you've dug. Eased, so walking in and out never snaps.
     const roof = raycastSolid(_target.x, _target.y, _target.z, 0, 1, 0, TUNNEL_ROOF)
-    const wantTilt = roof >= 0 ? Math.min(cameraState.pitch, TUNNEL_PITCH) : cameraState.pitch
+    const wantTilt = roof >= 0 ? Math.min(orbitPitch, TUNNEL_PITCH) : orbitPitch
     tilt.current += (wantTilt - tilt.current) * (1 - Math.pow(0.02, delta))
     const pitch = tilt.current
     const horizontal = Math.cos(pitch) * distance
@@ -242,8 +248,10 @@ export default function FollowCamera() {
     if (blend > 0.001) {
       const bob = localPlayer.grounded ? Math.sin(localPlayer.time * 11) * 0.03 * Math.min(1, localPlayer.speed / 7) : 0
       _eye.set(localPlayer.x, localPlayer.y + EYE_HEIGHT + bob, localPlayer.z)
-      const cp = Math.cos(pitch)
-      _eyeLook.set(-Math.sin(yaw) * cp, -Math.sin(pitch), -Math.cos(yaw) * cp).multiplyScalar(4).add(_eye)
+      // Your own look, over the full range: up at the ceiling, down at the floor.
+      const eyePitch = Math.min(FP_MAX_PITCH, Math.max(FP_MIN_PITCH, cameraState.pitch))
+      const cp = Math.cos(eyePitch)
+      _eyeLook.set(-Math.sin(yaw) * cp, -Math.sin(eyePitch), -Math.cos(yaw) * cp).multiplyScalar(4).add(_eye)
       camera.position.lerp(_eye, blend)
       _eyeLook.lerp(lookAt.current, 1 - blend)
       camera.lookAt(_eyeLook)

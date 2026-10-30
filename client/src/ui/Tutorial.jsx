@@ -38,7 +38,8 @@ function PointerMark({ selector, label }) {
       ring.style.borderRadius = getComputedStyle(target).borderRadius === '50%' ? '50%' : '18px'
       ring.style.opacity = '1'
       // In the top-right button column: beside the button, pointing at it from the left.
-      const inColumn = Boolean(target.closest('[data-hud="phonebar"]')) && window.innerHeight > window.innerWidth
+      const inColumn =
+        target.dataset.tutSide === 'left' || (Boolean(target.closest('[data-hud="phonebar"]')) && window.innerHeight > window.innerWidth)
       el.dataset.side = inColumn ? 'left' : ''
       // Otherwise above the button, pointing down - or below it when it's at the top of the screen.
       const below = !inColumn && r.top < 90

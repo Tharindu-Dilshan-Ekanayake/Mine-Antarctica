@@ -1,4 +1,4 @@
-import { MeshLambertMaterial, RepeatWrapping } from 'three'
+import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, MeshLambertMaterial, NoColorSpace, RepeatWrapping } from 'three'
 
 import { canvasTexture, makeCanvas } from '../lobby/canvasText'
 
@@ -138,4 +138,76 @@ export function makeDetailTexture(size) {
       ctx.fill()
     }
   })
+}
+
+/**
+ * Tileable rock: one grey-scale texture - lumpy fractal noise with a network of cracks -
+ * used for the walls of dug tunnels. Sampled from three directions (triplanar) so it
+ * never stretches on steep or overhanging walls, and read both as colour variation and as
+ * a height map for the bumpy lighting. Built in code: zero download.
+ */
+export function makeRockTexture(size) {
+  const canvas = makeCanvas(size, size)
+  const ctx = canvas.getContext('2d')
+  const img = ctx.createImageData(size, size)
+  const r = rng(91)
+  // Periodic value-noise lattices, one per octave: [cells, weight]. Three independent
+  // sets, one per colour channel: R = lumpy rocky relief (the height map), G and B
+  // = two other noises the shader uses for patches of stone, moss and thin sandy veins -
+  // so one texture read gives three unrelated values.
+  const OCTAVES = [
+    [4, 0.3],
+    [8, 0.26],
+    [16, 0.2],
+    [32, 0.15],
+    [64, 0.09],
+  ]
+  const grids = [0, 1, 2].map(() => OCTAVES.map(([n]) => Float32Array.from({ length: n * n }, () => r())))
+  const sample = (g, n, u, v) => {
+    const x = u * n
+    const y = v * n
+    const x0 = Math.floor(x)
+    const y0 = Math.floor(y)
+    const fx = x - x0
+    const fy = y - y0
+    const sx = fx * fx * (3 - 2 * fx)
+    const sy = fy * fy * (3 - 2 * fy)
+    const xa = x0 % n
+    const xb = (x0 + 1) % n
+    const ya = (y0 % n) * n
+    const yb = ((y0 + 1) % n) * n
+    const a = g[ya + xa]
+    const b = g[ya + xb]
+    const c = g[yb + xa]
+    const d = g[yb + xb]
+    return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy
+  }
+  const fractal = (set, u, v) => {
+    let h = 0
+    for (let o = 0; o < OCTAVES.length; o += 1) h += sample(set[o], OCTAVES[o][0], u, v) * OCTAVES[o][1]
+    return h
+  }
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const u = x / size
+      const v = y / size
+      // Lumpy relief with deep crevices (the low values); no contour-line "cracks": those
+      // close into loops and look like a maze.
+      const relief = Math.min(1, Math.max(0, (fractal(grids[0], u, v) - 0.5) * 1.5 + 0.5))
+      const i = (y * size + x) * 4
+      img.data[i] = Math.round(relief * 255)
+      img.data[i + 1] = Math.round(Math.min(1, fractal(grids[1], u, v) * 1.1) * 255)
+      img.data[i + 2] = Math.round(Math.min(1, fractal(grids[2], u, v) * 1.1) * 255)
+      img.data[i + 3] = 255
+    }
+  }
+  ctx.putImageData(img, 0, 0)
+  const tex = new CanvasTexture(canvas)
+  tex.colorSpace = NoColorSpace
+  tex.wrapS = RepeatWrapping
+  tex.wrapT = RepeatWrapping
+  tex.minFilter = LinearMipmapLinearFilter
+  tex.magFilter = LinearFilter
+  tex.anisotropy = 2
+  return tex
 }

@@ -22,6 +22,8 @@ import {
   REROLL_SECONDS,
   RESTOCK_SECONDS,
   rollCrystal,
+  SIZES,
+  sizeRangeAtDepth,
   START,
   LEVEL_UPGRADES,
   levelSeries,
@@ -58,7 +60,9 @@ const MAX_WORLD_CRYSTALS = 160
 /** Chance a plain pickaxe swing turns up a crystal. */
 const FIND_CHANCE = 0.17
 /** Finds that come easy for a brand-new miner. */
-const BEGINNER_FINDS = 3
+const BEGINNER_FINDS = 5
+/** Largest size band a beginner finds: Small (up to 6 kg), always light enough for the bag. */
+const BEGINNER_MAX_SIZE = 1
 const LOOSE_TTL_MS = 5 * 60 * 1000
 /** A found crystal belongs to its finder for this long, then anyone may grab it. */
 const OWNER_LOCK_MS = 60 * 1000
@@ -463,7 +467,7 @@ export class MineRoom extends Room {
   }
 
   /** Creates a crystal in the world. Returns it, or null when the world is full. */
-  spawnCrystal({ x, y, z, player, sessionId, minRarity = 0, weightMult = 1, mutation = '', luckMult = 1, state = 0 }) {
+  spawnCrystal({ x, y, z, player, sessionId, minRarity = 0, weightMult = 1, mutation = '', luckMult = 1, state = 0, maxSize, anyDepth = false }) {
     const s = this.state
     if (s.crystals.size >= MAX_WORLD_CRYSTALS) {
       // Drop the oldest unowned loose crystal to make room; give up otherwise.
@@ -481,7 +485,16 @@ export class MineRoom extends Room {
 
     // Rarity follows the altitude you actually dug at, so deep tunnels are poorer.
     const zone = zoneIndexAt(Math.min(y, baseHeight(x, z, s.seed)))
-    const roll = rollCrystal(rand, zone, luckMult, minRarity)
+    // Size follows depth: small crystals near the entrance, bigger and heavier the deeper
+    // into the mountain you dig (radars, which bury theirs at the surface, ignore this).
+    let sizeMax = maxSize ?? SIZES.length - 1
+    let sizeMin = 0
+    if (!anyDepth) {
+      const band = sizeRangeAtDepth(baseHeight(x, z, s.seed) - y)
+      sizeMax = Math.min(sizeMax, band.max)
+      sizeMin = Math.min(band.min, sizeMax)
+    }
+    const roll = rollCrystal(rand, zone, luckMult, minRarity, sizeMax, sizeMin)
     const weight = Math.round(roll.weight * weightMult * 10) / 10
     const id = `c${(this.crystalCounter++).toString(36)}`
     const hp = crystalHp(roll.typeId, roll.sizeIndex)
@@ -587,7 +600,8 @@ export class MineRoom extends Room {
     let chance = Math.min(0.5, FIND_CHANCE * (1 + Math.log10(luckMult) * 0.5))
     // Brand-new miners (the first-time guide asks for two crystals) find their first
     // few quickly, so the first minute is about the fun part, not waiting.
-    if (player.crystalsMined + player.backpack.length < BEGINNER_FINDS) chance = Math.max(chance, 0.5)
+    const beginner = player.crystalsMined + player.backpack.length < BEGINNER_FINDS
+    if (beginner) chance = Math.max(chance, 0.5)
     if (rand() < chance) {
       const crystal = this.spawnCrystal({
         x: m.x + dx * radius * 0.85 + (rand() - 0.5) * radius * 0.4,
@@ -597,6 +611,9 @@ export class MineRoom extends Room {
         sessionId: client.sessionId,
         luckMult,
         mutation: this.rollMutation(),
+        // A new miner's first finds are small ones: a heavy crystal that won't fit the
+        // bag is just confusing on the very first dig.
+        maxSize: beginner ? BEGINNER_MAX_SIZE : undefined,
       })
       if (crystal) {
         player.candy += 1 + Math.floor(rand() * 2)
@@ -851,6 +868,7 @@ export class MineRoom extends Room {
           player,
           sessionId: client.sessionId,
           minRarity: 1,
+          anyDepth: true,
           weightMult: radar.id === 'crystal' ? 1.5 : 1,
           luckMult: this.luckMultiplier(player, now),
           mutation: radar.id === 'boulder' ? weathers[Math.floor(rand() * weathers.length)] : this.rollMutation(),

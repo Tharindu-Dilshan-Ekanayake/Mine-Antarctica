@@ -20,7 +20,7 @@ export default function Modal({ title, children, width = 'min(1040px, 94vw)', he
       {/* Small screens: the whole panel scales down to fit (--modal-s, set with the HUD
           scale), laid out at its full size so nothing inside reflows or gets cut off. */}
       <div className="snowcap pop-in" style={{ width: `calc(${width} / var(--modal-s, 1))`, scale: 'var(--modal-s, 1)' }}>
-        <div className="panel flex flex-col overflow-hidden" style={{ maxHeight: 'calc(86vh / var(--modal-s, 1))' }}>
+        <div className="panel flex flex-col overflow-hidden" style={{ maxHeight: 'calc(86dvh / var(--modal-s, 1))' }}>
           <div className="modal-head flex items-center gap-3 px-5 py-3">
             <h2 className="cartoon flex-1 text-[34px] text-white">{title}</h2>
             {headerExtra}

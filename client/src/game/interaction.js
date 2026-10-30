@@ -175,10 +175,12 @@ export function updateAim(me) {
   if (balls.length > 1) {
     const top = balls[balls.length - 1].y
     aim.my = (balls[0].y + top) / 2
-    aim.sy = (top - balls[0].y) / 2 + r
+    aim.sy = (top - balls[0].y) / 2 + balls[0].r
+    aim.wr = balls[0].r
   } else {
     aim.my = aim.y
     aim.sy = r
+    aim.wr = r
   }
   aim.valid = true
 }
