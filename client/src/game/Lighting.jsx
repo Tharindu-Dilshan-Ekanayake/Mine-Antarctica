@@ -2,74 +2,84 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useLayoutEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 
-import { LIGHTS } from './sceneStyle'
+import { useNet } from '../net/net'
+import { useQuality } from '../store/quality'
+import { localPlayer } from './localPlayer'
+import { LIGHTS, WEATHER_LOOK } from './sceneStyle'
+import { skyTint } from './Sky'
 
 const SUN_DIRECTION = new Vector3(...LIGHTS.sunDirection).normalize()
-/** How far back along SUN_DIRECTION the light sits from the point it shadows. */
-const SUN_DISTANCE = 60
-/** Half-size of the square area around the player that receives shadows. */
-const SHADOW_EXTENT = 24
+const SUN_DISTANCE = 80
+const SHADOW_EXTENT = 30
 
 /**
- * Bright, even daylight: a white hemisphere fill and a warm sun with soft shadows.
- *
- * A directional light's shadow only covers a fixed box around its target, so the sun
- * and its target are moved with the player every frame. Otherwise shadows would exist
- * only near the world origin and disappear a few steps down the track.
- *
- * @param {{ followRef: React.MutableRefObject<any> }} props the player's rigid body
+ * Hemisphere fill + sun. The sun (and its shadow box) follows the player, so
+ * shadows exist wherever you are. No shadow casting on LOW.
+ * Thunder weather adds lightning flashes by pulsing the fill.
  */
-export function Lighting({ followRef }) {
+export default function Lighting() {
   const sunRef = useRef(null)
+  const hemiRef = useRef(null)
   const scene = useThree((s) => s.scene)
+  const shadows = useQuality((s) => s.settings.shadows)
+  const mapSize = useQuality((s) => s.settings.shadowMapSize)
+  const weather = useNet((s) => s.world.weather)
+  const flash = useRef({ t: 0, next: 3 })
 
   useLayoutEffect(() => {
     const sun = sunRef.current
     if (!sun) return undefined
-
-    const shadowCamera = sun.shadow.camera
-    shadowCamera.left = -SHADOW_EXTENT
-    shadowCamera.right = SHADOW_EXTENT
-    shadowCamera.top = SHADOW_EXTENT
-    shadowCamera.bottom = -SHADOW_EXTENT
-    shadowCamera.near = 1
-    shadowCamera.far = SUN_DISTANCE * 2
-    shadowCamera.updateProjectionMatrix()
-
-    // The target has to be in the scene for its matrix to update as it moves.
+    const cam = sun.shadow.camera
+    cam.left = -SHADOW_EXTENT
+    cam.right = SHADOW_EXTENT
+    cam.top = SHADOW_EXTENT
+    cam.bottom = -SHADOW_EXTENT
+    cam.near = 1
+    cam.far = SUN_DISTANCE * 2.5
+    cam.updateProjectionMatrix()
     scene.add(sun.target)
     return () => {
       scene.remove(sun.target)
     }
-  }, [scene])
+  }, [scene, shadows, mapSize])
 
-  useFrame(() => {
+  useFrame((_s, delta) => {
     const sun = sunRef.current
-    const body = followRef.current
-    if (!sun || !body) return
-
-    const p = body.translation()
-    sun.target.position.set(p.x, 0, p.z)
+    if (!sun) return
+    sun.target.position.set(localPlayer.x, localPlayer.y, localPlayer.z)
     sun.position.copy(sun.target.position).addScaledVector(SUN_DIRECTION, SUN_DISTANCE)
+
+    let bolt = 0
+    if (WEATHER_LOOK[weather]?.flashes) {
+      const f = flash.current
+      f.next -= delta
+      if (f.next <= 0) {
+        f.t = 0.25
+        f.next = 2 + Math.random() * 6
+      }
+      if (f.t > 0) {
+        f.t -= delta
+        bolt = f.t > 0.15 || (f.t > 0 && f.t < 0.08) ? 2.5 : 0
+      }
+    }
+    sun.intensity = LIGHTS.sunIntensity * skyTint.light
+    if (hemiRef.current) hemiRef.current.intensity = LIGHTS.hemiIntensity * skyTint.light + bolt
   })
 
   return (
     <>
-      <hemisphereLight args={[LIGHTS.hemiSky, LIGHTS.hemiGround, LIGHTS.hemiIntensity]} />
+      <hemisphereLight ref={hemiRef} args={[LIGHTS.hemiSky, LIGHTS.hemiGround, LIGHTS.hemiIntensity]} />
       <directionalLight
+        key={mapSize}
         ref={sunRef}
-        castShadow
+        castShadow={shadows}
         color={LIGHTS.sunColor}
         intensity={LIGHTS.sunIntensity}
-        position={SUN_DIRECTION.clone().multiplyScalar(SUN_DISTANCE).toArray()}
-        shadow-mapSize={[2048, 2048]}
-        shadow-radius={LIGHTS.shadowSoftness}
+        shadow-mapSize={[mapSize || 512, mapSize || 512]}
         shadow-intensity={LIGHTS.shadowIntensity}
-        shadow-bias={-0.0005}
-        shadow-normalBias={0.03}
+        shadow-bias={-0.0006}
+        shadow-normalBias={0.04}
       />
     </>
   )
 }
-
-export default Lighting

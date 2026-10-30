@@ -1,0 +1,131 @@
+# Ships Mine Antarctica to Boxity: the dev branch to the dev (playtest) channel,
+# main to production - on both Boxity platforms, prod always and stage too once the repo
+# has a stage token. The two deploys are separate jobs: a stage failure never blocks or
+# undoes prod. "Run workflow" deploys any branch to the one platform you pick.
+#
+#   server   -> Docker image in this repo's GitHub Container Registry, rolled out by Legion
+#   frontend -> the built client, served at https://mine-antarctica.play.bloxity.io
+#               (prod; .dev.play... for dev, and the same under stage.bloxity.io on stage)
+#
+# One build for both platforms: no environment, API URL or domain goes into the client
+# build - Boxity tells each page which platform it's on.
+#
+# Repository secrets (Settings -> Secrets and variables -> Actions):
+#   LEGION_DEPLOY_TOKEN        from hosting.bloxity.io (production)
+#   LEGION_DEPLOY_TOKEN_STAGE  from hosting.stage.bloxity.io (optional: ships to stage too)
+# After the first run, make the ghcr.io package public so Legion can pull it (repo ->
+# Packages -> mine-antarctica-server -> Package settings -> Change visibility).
+
+name: Deploy to Boxity
+
+on:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which Boxity platform to deploy this branch to
+        type: choice
+        options: [staging, prod]
+        default: staging
+
+env:
+  GAME_ID: mine-antarctica
+  # Players per room (the Colyseus room's maxClients). Boxity decides how many rooms a
+  # pod holds from the CPU each player takes.
+  ROOM_SIZE: 8
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  targets:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.t.outputs.list }}
+    steps:
+      - id: t
+        env:
+          HAS_STAGE_TOKEN: ${{ secrets.LEGION_DEPLOY_TOKEN_STAGE != '' }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo 'list=["${{ inputs.target }}"]' >> "$GITHUB_OUTPUT"
+          elif [ "$HAS_STAGE_TOKEN" != "true" ]; then echo 'list=["prod"]' >> "$GITHUB_OUTPUT"
+          else echo 'list=["prod","staging"]' >> "$GITHUB_OUTPUT"; fi
+
+  deploy:
+    needs: targets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      # Staging can never take prod down with it.
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.targets.outputs.list) }}
+    env:
+      API_URL: ${{ matrix.target == 'staging' && 'https://api.stage.bloxity.io' || 'https://api.bloxity.io' }}
+      LEGION_URL: ${{ matrix.target == 'staging' && 'https://legion.stage.bloxity.io' || 'https://legion.bloxity.io' }}
+      # Each platform's own token, by name: staging never falls back to the prod one.
+      DEPLOY_TOKEN: ${{ secrets[matrix.target == 'staging' && 'LEGION_DEPLOY_TOKEN_STAGE' || 'LEGION_DEPLOY_TOKEN'] }}
+    steps:
+      - name: Check the token
+        run: |
+          if [ -z "$DEPLOY_TOKEN" ]; then
+            if [ "${{ matrix.target }}" = "staging" ]; then echo "::error::LEGION_DEPLOY_TOKEN_STAGE is not set - add the token from hosting.stage.bloxity.io"; else echo "::error::LEGION_DEPLOY_TOKEN is not set - add the token from hosting.bloxity.io"; fi
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Channel and image name
+        id: meta
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then channel=prod; else channel=dev; fi
+          # Tagged per platform, so a staging build never replaces a production image.
+          if [ "${{ matrix.target }}" = "staging" ]; then tag="stage-$channel-$GITHUB_SHA"; else tag="$channel-$GITHUB_SHA"; fi
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/$owner/$GAME_ID-server:$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push the server image
+        run: |
+          docker build -f server/Dockerfile -t "${{ steps.meta.outputs.image }}" .
+          docker push "${{ steps.meta.outputs.image }}"
+
+      - name: Roll the server out on Legion
+        run: |
+          curl -sS --fail-with-body -X POST "$LEGION_URL/v1/apps/$GAME_ID/deploy" \
+            -H "Authorization: Bearer $DEPLOY_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d "{\"channel\":\"${{ steps.meta.outputs.channel }}\",\"image\":\"${{ steps.meta.outputs.image }}\",\"version\":\"$GITHUB_SHA\",\"roomSize\":$ROOM_SIZE}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Build the client
+        working-directory: client
+        env:
+          # The game's hosting id (join through Boxity's matchmaker) and its slug - never
+          # an environment or a URL.
+          VITE_LEGION_GAME_ID: ${{ env.GAME_ID }}
+          VITE_GAME_SLUG: ${{ env.GAME_ID }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload the frontend
+        run: |
+          (cd client/dist && zip -qr ../../build.zip .)
+          curl -sS --fail-with-body -X POST \
+            "$API_URL/v1/hosting/games/$GAME_ID/frontend?channel=${{ steps.meta.outputs.channel }}&version=$GITHUB_SHA" \
+            -H "Authorization: Bearer $DEPLOY_TOKEN" \
+            -H 'Content-Type: application/zip' \
+            --data-binary @build.zip

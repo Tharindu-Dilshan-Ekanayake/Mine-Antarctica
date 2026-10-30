@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react'
 export const BloxityContext = createContext(null)
 
 /**
- * Access the Bloxity session: `user`, `guest`, `isLoggedIn`, `login`, `logout`,
+ * Access the Bloxity session: `user`, `guest`, `isLoggedIn`,
  * `avatar` (equipped IDs), `proportions`, and the `game` loading helpers.
  *
  * Must be called inside a `<BloxityProvider>`.

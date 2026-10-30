@@ -7,8 +7,8 @@ import './index.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {/* Slug comes from VITE_GAME_SLUG in client/.env — see .env.example. */}
-    <BloxityProvider gameSlug={import.meta.env.VITE_GAME_SLUG}>
+    {/* The Boxity slug is mine-antarctica (shared/boxity.js); VITE_GAME_SLUG overrides it. */}
+    <BloxityProvider>
       <App />
     </BloxityProvider>
   </StrictMode>,

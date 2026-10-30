@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
+import { GAME_ID } from '@shared/boxity.js'
 import { BloxityContext } from './BloxityContext'
+import { boxityEnv, toldEnvironment } from './env'
+import { startPlatform } from './platform'
 import { getSDK, safeCall, toUnsubscribe, waitForSDK } from './sdk'
 import { DEFAULT_PROPORTIONS, useBloxityStore } from './store'
 
@@ -34,23 +37,27 @@ function isResetSentinel(equipped) {
 }
 
 /**
- * Bloxity's real endpoints.
- *
- * These MUST be passed explicitly. If `init()` receives neither `apiUrl` nor
- * `portalUrl`, the SDK checks whether it is running on localhost/127.0.0.1 and, if
- * so, silently repoints BOTH at `window.location.origin` - i.e. at the Vite dev
- * server. `showAuthPopup()` then opens `http://localhost:5173/auth?popup=1`, Vite's
- * SPA fallback serves the game again inside the popup, no token is ever posted back,
- * and login can never succeed. That fallback is meant for people running the whole
- * Bloxity portal locally; for game development it has to be overridden.
+ * Which Boxity to talk to is the platform's to say (see env.js), so init() is given no
+ * URLs - with one exception: a dev server on localhost that nobody told anything. There
+ * the SDK would repoint itself at the Vite server (meant for running the whole Boxity
+ * portal locally) and sign-in could never return, so in development, and only when told
+ * nothing, it's handed production's addresses from the one environment helper.
  */
-const PORTAL_URL = import.meta.env.VITE_BLOXITY_PORTAL_URL || 'https://bloxity.io'
-const API_URL = import.meta.env.VITE_BLOXITY_API_URL || 'https://api.bloxity.io'
+function initOptions(gameSlug) {
+  if (!import.meta.env.DEV || toldEnvironment()) return { gameSlug }
+  const { apiUrl, portalUrl } = boxityEnv()
+  return { gameSlug, apiUrl, portalUrl }
+}
 
-function initOnce(gameSlug, signal) {
+function initOnce(gameSlug) {
   if (!initPromise) {
-    initPromise = waitForSDK({ signal }).then((sdk) => {
-      sdk.init({ gameSlug, apiUrl: API_URL, portalUrl: PORTAL_URL })
+    // No abort signal: this promise is shared by every mount (StrictMode mounts twice in
+    // dev), so one mount's cleanup must not cancel it for the next. Each caller ignores
+    // a late result through its own `cancelled` flag instead.
+    initPromise = waitForSDK().then((sdk) => {
+      sdk.init(initOptions(gameSlug))
+      // Emotes, leaderboards, settings, ad breaks, chat...: right after init, not later.
+      startPlatform(sdk)
       return sdk
     })
     // A failed init shouldn't poison every later attempt (e.g. HMR reload).
@@ -69,9 +76,8 @@ function initOnce(gameSlug, signal) {
  * @param {{ gameSlug?: string, children: React.ReactNode }} props
  */
 export function BloxityProvider({ gameSlug, children }) {
-  // >>> FILL ME IN <<< Set VITE_GAME_SLUG in client/.env to the slug from your
-  // Bloxity developer dashboard. The `gameSlug` prop overrides it if passed.
-  const slug = gameSlug || import.meta.env.VITE_GAME_SLUG || 'MY_GAME_SLUG'
+  // The game's Boxity slug (its hosting id); VITE_GAME_SLUG or the `gameSlug` prop override it.
+  const slug = gameSlug || import.meta.env.VITE_GAME_SLUG || GAME_ID
 
   const status = useBloxityStore((s) => s.status)
   const error = useBloxityStore((s) => s.error)
@@ -83,21 +89,13 @@ export function BloxityProvider({ gameSlug, children }) {
   const sdkRef = useRef(null)
 
   useEffect(() => {
-    if (slug === 'MY_GAME_SLUG') {
-      console.warn(
-        '[bloxity] VITE_GAME_SLUG is still the placeholder "MY_GAME_SLUG". ' +
-          'Set it in client/.env before testing a real login.',
-      )
-    }
-
-    const controller = new AbortController()
     const store = useBloxityStore.getState()
     const unsubscribers = []
     let cancelled = false
 
     store.setStatus('loading')
 
-    initOnce(slug, controller.signal)
+    initOnce(slug)
       .then((sdk) => {
         if (cancelled) return
         sdkRef.current = sdk
@@ -174,26 +172,12 @@ export function BloxityProvider({ gameSlug, children }) {
 
     return () => {
       cancelled = true
-      controller.abort()
       unsubscribers.forEach((fn) => safeCall(fn))
     }
   }, [slug])
 
-  const login = useCallback(() => {
-    const sdk = sdkRef.current || getSDK()
-    if (!sdk) {
-      console.warn('[bloxity] login() called before the SDK was ready')
-      return
-    }
-    // Login state arrives via onUserChanged — deliberately nothing to await here.
-    safeCall(sdk.auth.showAuthPopup?.bind(sdk.auth))
-  }, [])
-
-  const logout = useCallback(() => {
-    const sdk = sdkRef.current || getSDK()
-    if (!sdk) return
-    safeCall(sdk.auth.logout?.bind(sdk.auth))
-  }, [])
+  // No login / logout here: inside Boxity its toolbar handles accounts, and this game
+  // runs nowhere else. The signed-in user arrives through onUserChanged above.
 
   // Loading-screen + room helpers, exposed so gameplay code doesn't reach for
   // `window.Legion` directly.
@@ -217,14 +201,12 @@ export function BloxityProvider({ gameSlug, children }) {
       isLoggedIn: Boolean(user),
       /** Always something displayable, per the getUser() || getGuest() pattern. */
       identity: user || guest,
-      login,
-      logout,
       avatar: equipped,
       proportions: proportions || DEFAULT_PROPORTIONS,
       game,
       gameSlug: slug,
     }),
-    [status, error, user, guest, equipped, proportions, login, logout, game, slug],
+    [status, error, user, guest, equipped, proportions, game, slug],
   )
 
   return <BloxityContext.Provider value={value}>{children}</BloxityContext.Provider>
