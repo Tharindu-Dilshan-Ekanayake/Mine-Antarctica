@@ -488,12 +488,17 @@ function useCompact() {
  * the same on a phone, a laptop and a big monitor, just bigger or smaller. The hotbar
  * also shrinks to fit the width. Written as CSS variables: no React renders on resize.
  */
+/** Width (px, at full size) of the bottom row: timer + BASE, the hotbar, weather + luck, gaps. */
+const BOTTOM_ROW_WIDTH = 1480
+
 function useHudScale() {
   useEffect(() => {
     const apply = () => {
       const w = window.innerWidth
       const h = window.innerHeight
-      const s = Math.min(1.12, Math.max(0.58, Math.min(w, h) / 800))
+      // The HUD shrinks with the screen's height AND width: the bottom row (timer and
+      // BASE, the hotbar, weather and luck) must always fit side by side.
+      const s = Math.min(1.12, Math.max(0.5, Math.min(Math.min(w, h) / 800, (w - 24) / BOTTOM_ROW_WIDTH)))
       const bar = Math.min(s, (w - 16) / 760)
       document.documentElement.style.setProperty('--hud-s', s.toFixed(3))
       document.documentElement.style.setProperty('--hud-bar', bar.toFixed(3))

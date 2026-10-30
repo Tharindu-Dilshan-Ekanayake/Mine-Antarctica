@@ -675,6 +675,35 @@ canvas {
   border-left-color: #ff5a5a;
 }
 
+/* Touch screens big enough for the full HUD (tablets, touch laptops): the touch controls
+   shrink with the rest of the HUD and sit clear of the bottom row - the joystick above
+   the money, the dig / jump / pick-up buttons above weather and luck. (Phones get their
+   own placement below.) */
+[data-hud='joystick'] {
+  left: calc(var(--hud-gap) + 8px);
+  bottom: calc(var(--hud-gap) + 196px * var(--hud-s));
+  scale: var(--hud-s);
+  transform-origin: bottom left;
+}
+[data-hud='action'] {
+  right: calc(var(--hud-gap) + 70px * var(--hud-s));
+  bottom: calc(var(--hud-gap) + 76px * var(--hud-s));
+  scale: var(--hud-s);
+  transform-origin: bottom right;
+}
+[data-hud='jump'] {
+  right: calc(var(--hud-gap) + 24px * var(--hud-s));
+  bottom: calc(var(--hud-gap) + 186px * var(--hud-s));
+  scale: var(--hud-s);
+  transform-origin: bottom right;
+}
+[data-hud='interact'] {
+  right: calc(var(--hud-gap) + 184px * var(--hud-s));
+  bottom: calc(var(--hud-gap) + 90px * var(--hud-s));
+  scale: var(--hud-s);
+  transform-origin: bottom right;
+}
+
 /* ---- Phones (landscape or portrait) and short windows ----
    Only what you play with stays on screen: joystick, dig / jump / E, BASE, the backpack
    load and the climb meter. The swap button opens everything else in one drawer. */
