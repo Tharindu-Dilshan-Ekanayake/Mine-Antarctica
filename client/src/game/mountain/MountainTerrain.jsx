@@ -8,7 +8,7 @@ import { useQuality } from '../../store/quality'
 import { localPlayer } from '../localPlayer'
 import { VCOL } from '../terrain/digStore'
 import { CHUNKS, getGeneration } from '../terrain/heightGrid'
-import { addWorldPos, makeDetailTexture, uTime } from '../world/materials'
+import { addWorldPos, makeDetailTexture, makeRockTexture } from '../world/materials'
 import { takeDirtySurface } from '../terrain/digStore'
 import { createChunkGeometry, createFarGeometry, fillChunkGeometry, fillFarGeometry, recolorChunk, recolorFar, setChunkHoles } from './terrainMesh'
 import { getReadyVersion, isColumnReady, mergeChunk, resetVolumes, takeStale, updateVolumes } from './volumes'
@@ -56,68 +56,102 @@ function farMaterial(detail) {
 const caveTorch = { value: new Vector3() }
 
 /**
- * Dug ground, painted like a crystal cave: deep walls turn to warm layered rock (rust,
- * ochre and plum strata), studded with glowing crystal veins - pink, violet, green,
- * cyan - that pulse softly and grow denser the higher up the mountain you dig.
- * Underground it's lit by a headlamp you carry and the distance fades to darkness, so
- * near and far, and one wall from the next, are easy to tell apart. All in the shader,
- * by world position and each vertex's depth inside the original rock.
+ * Dug ground, painted like real rock. Deep in the mountain the walls are dark earthy
+ * brown - clay and umber lumps, grey stone, damp olive moss low down, thin sandy veins -
+ * all with a rough, bumpy, cracked surface that catches the light; near the surface and
+ * higher up they are frosted grey-white. Lit by a headlamp you carry, fading to
+ * darkness in the distance, so near and far and one wall from the next are easy to tell
+ * apart. All in the shader: a tileable rock texture read from three directions
+ * (triplanar, so nothing stretches) gives the colour variation AND the relief.
  */
-function makeCaveMaterial(detail) {
+function makeCaveMaterial(detail, rock) {
   const mat = new MeshLambertMaterial({ vertexColors: true, map: detail, side: DoubleSide })
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = uTime
     shader.uniforms.uTorch = caveTorch
+    shader.uniforms.uRock = { value: rock }
     addWorldPos(shader)
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
 attribute float aDepth;
-varying float vDepth;`)
+varying float vDepth;
+varying vec3 vWNormal;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-  vDepth = aDepth;`)
+  vDepth = aDepth;
+  vWNormal = normalize(mat3(modelMatrix) * objectNormal);`)
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform float uTime;
 uniform vec3 uTorch;
+uniform sampler2D uRock;
 varying float vDepth;
-float caveHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }`)
+varying vec3 vWNormal;
+// The rock texture from three directions, blended by which way the wall faces.
+vec3 rockTri(vec3 p, vec3 w, float s) {
+  p *= s;
+  return texture2D(uRock, p.zy).rgb * w.x + texture2D(uRock, p.xz).rgb * w.y + texture2D(uRock, p.xy).rgb * w.z;
+}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
-  float cave = smoothstep(0.7, 3.0, vDepth);
-  // Layered rock: bands by height, wavering with position.
-  float waver = sin(vWPos.x * 0.21 + vWPos.z * 0.17) * 0.9 + sin(vWPos.x * 0.07 - vWPos.z * 0.11) * 1.4;
-  float strata = sin(vWPos.y * 0.85 + waver) * 0.5 + 0.5;
-  vec3 rust = vec3(0.56, 0.24, 0.18);
-  vec3 ochre = vec3(0.74, 0.5, 0.27);
-  vec3 plum = vec3(0.4, 0.2, 0.38);
-  vec3 rockCol = mix(mix(rust, ochre, smoothstep(0.35, 0.75, strata)), plum, smoothstep(0.75, 0.98, strata) * 0.8);
-  diffuseColor.rgb = mix(diffuseColor.rgb, rockCol * (0.85 + diffuseColor.rgb * 0.3), cave * 0.8);`)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-  // Crystal veins: some cells of a 3D grid hold a glowing patch of crystal.
-  vec3 cellPos = vWPos * 0.75;
-  vec3 cell = floor(cellPos);
-  float h = caveHash(cell);
-  float density = 0.86 - clamp(vWPos.y / 320.0, 0.0, 1.0) * 0.1;
-  if (h > density && cave > 0.05) {
-    vec3 local = fract(cellPos) - 0.5;
-    // Small, crisp patches: they sparkle in the wall instead of blurring it.
-    float spot = 1.0 - smoothstep(0.08, 0.24, length(local + (vec3(caveHash(cell + 1.3), caveHash(cell + 2.7), caveHash(cell + 4.1)) - 0.5) * 0.3));
-    float pick = caveHash(cell + 9.1);
-    vec3 vein = pick < 0.25 ? vec3(1.0, 0.35, 0.75) : pick < 0.5 ? vec3(0.7, 0.4, 1.0) : pick < 0.75 ? vec3(0.35, 1.0, 0.55) : vec3(0.35, 0.9, 1.0);
-    float pulse = 0.7 + 0.3 * sin(uTime * 1.8 + h * 40.0);
-    diffuseColor.rgb = mix(diffuseColor.rgb, vein, spot * cave * 0.9);
-    totalEmissiveRadiance += vein * spot * cave * pulse * 0.7;
+  vec3 triW = abs(vWNormal);
+  triW /= (triW.x + triW.y + triW.z + 1e-4);
+  vec3 rkA = rockTri(vWPos, triW, 0.10);   // big lumps, patches, moss
+  vec3 rkB = rockTri(vWPos, triW, 0.42);   // medium rock, veins
+  vec3 rkC = rockTri(vWPos, triW, 1.7);    // fine grain
+  // Relief from the medium and fine scales only (the big, gentle scale would show as
+  // stair-steps: its changes are smaller than the texture's 8-bit precision).
+  float rockH = rkB.r * 0.8 + rkC.r * 0.2;
+  // Earthy palette.
+  vec3 umber = vec3(0.10, 0.068, 0.045);
+  vec3 brown = vec3(0.30, 0.20, 0.125);
+  vec3 clay  = vec3(0.50, 0.33, 0.20);
+  vec3 olive = vec3(0.24, 0.27, 0.11);
+  vec3 stone = vec3(0.27, 0.26, 0.26);
+  vec3 sand  = vec3(0.76, 0.65, 0.43);
+  vec3 earth = mix(umber, brown, smoothstep(0.25, 0.7, rkB.r));
+  earth = mix(earth, clay, smoothstep(0.55, 0.85, rkA.r) * 0.7);
+  // Grey stone patches, and damp olive moss on the lower levels of the mountain.
+  earth = mix(earth, stone, smoothstep(0.58, 0.78, rkA.g) * 0.8);
+  float moss = smoothstep(0.6, 0.78, rkA.b) * (0.4 + 0.6 * smoothstep(0.25, 0.8, rkB.r));
+  moss *= 1.0 - smoothstep(70.0, 170.0, vWPos.y);
+  earth = mix(earth, olive * (0.75 + rkC.r * 0.5), moss * 0.85);
+  // Thin pale sandy veins, like the light strip running down a rock wall.
+  // (Only in a few places - a vein everywhere reads as map contour lines.)
+  float vein = (1.0 - smoothstep(0.008, 0.032, abs(rkB.g - 0.5))) * smoothstep(0.55, 0.7, rkA.g);
+  earth = mix(earth, sand * (0.8 + rkC.g * 0.4), vein * 0.75);
+  // Fine grain and dark cracks.
+  earth *= 0.55 + 0.9 * rkC.r;
+  earth *= 0.4 + 1.2 * smoothstep(0.15, 0.6, rkB.r);
+  // Frost: near the surface and up high the walls are grey-white and patchy.
+  float frost = (1.0 - smoothstep(1.0, 6.0, vDepth)) * smoothstep(0.3, 0.7, rkA.r * 0.6 + rkB.b * 0.5);
+  frost *= 0.45 + 0.55 * smoothstep(-0.3, 0.7, vWNormal.y);
+  frost = max(frost, 0.0);
+  vec3 frostCol = mix(vec3(0.58, 0.64, 0.70), vec3(0.90, 0.93, 0.97), rkC.g);
+  earth = mix(earth, frostCol, clamp(frost * 0.95, 0.0, 0.95));
+  // Only below the thin layer of surface do the walls take this look.
+  diffuseColor.rgb = mix(diffuseColor.rgb, earth, smoothstep(0.1, 0.9, vDepth));`)
+      // Bumpy relief: the rock's height map tilts the lighting normal (derivative bump
+      // mapping), so every wall looks rough instead of smooth.
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  {
+    vec2 dH = vec2(dFdx(rockH), dFdy(rockH)) * 0.38;
+    vec3 sX = dFdx(-vViewPosition);
+    vec3 sY = dFdy(-vViewPosition);
+    vec3 R1 = cross(sY, normal);
+    vec3 R2 = cross(normal, sX);
+    float det = dot(sX, R1);
+    vec3 grad = sign(det) * (dH.x * R1 + dH.y * R2);
+    normal = normalize(abs(det) * normal - grad * smoothstep(0.1, 0.9, vDepth));
   }`)
       .replace('#include <opaque_fragment>', `
   // Headlamp: underground the light comes from where you stand. Walls near you are
   // bright, far ones dim, and walls turned towards you brighter than the ones turned
   // away - so you can tell at a glance what's close, what's far and where the tunnel goes.
+  float caveAmt = smoothstep(0.1, 0.9, vDepth);
   vec3 toLamp = uTorch - vWPos;
   float dLamp = length(toLamp);
   vec3 nWorld = inverseTransformDirection(normal, viewMatrix);
   float facing = max(dot(nWorld, toLamp / max(dLamp, 0.001)), 0.0);
-  float lamp = (0.3 + 0.7 * facing) / (1.0 + dLamp * dLamp * 0.02);
-  vec3 lit = outgoingLight * (0.2 + 1.3 * lamp) + diffuseColor.rgb * vec3(1.0, 0.8, 0.55) * lamp * 0.45;
-  outgoingLight = mix(outgoingLight, lit, cave);
+  float lamp = (0.25 + 0.75 * facing) / (1.0 + dLamp * dLamp * 0.018);
+  vec3 lit = outgoingLight * (0.18 + 1.05 * lamp) + diffuseColor.rgb * vec3(1.0, 0.8, 0.55) * lamp * 0.55;
+  outgoingLight = mix(outgoingLight, lit, caveAmt);
 #include <opaque_fragment>`)
       .replace('#include <fog_fragment>', `#ifdef USE_FOG
   #ifdef FOG_EXP2
@@ -127,12 +161,12 @@ float caveHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43
   #endif
   // Underground the distance fades into darkness, not into the pale sky: far walls sink
   // back, near ones stand out.
-  float caveDark = smoothstep(4.0, 26.0, vFogDepth) * cave;
-  vec3 fogTo = mix(fogColor, vec3(0.035, 0.022, 0.018), cave);
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, fogTo, max(fogAmount, caveDark * 0.92));
+  float caveDark = smoothstep(5.0, 30.0, vFogDepth) * smoothstep(0.1, 0.9, vDepth);
+  vec3 fogTo = mix(fogColor, vec3(0.03, 0.022, 0.017), smoothstep(0.1, 0.9, vDepth));
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, fogTo, max(fogAmount, caveDark * 0.9));
 #endif`)
   }
-  mat.customProgramCacheKey = () => 'caveWalls2'
+  mat.customProgramCacheKey = () => 'caveRock'
   return mat
 }
 
@@ -147,8 +181,15 @@ export default function MountainTerrain() {
     return t
   }, [settings.texSize])
   const nearMat = useMemo(() => new MeshLambertMaterial({ vertexColors: true, map: detail, side: DoubleSide }), [detail])
-  const caveMat = useMemo(() => makeCaveMaterial(detail), [detail])
-  useEffect(() => () => caveMat.dispose(), [caveMat])
+  const rockTex = useMemo(() => makeRockTexture(settings.texSize >= 1024 ? 256 : 128), [settings.texSize])
+  const caveMat = useMemo(() => makeCaveMaterial(detail, rockTex), [detail, rockTex])
+  useEffect(
+    () => () => {
+      caveMat.dispose()
+      rockTex.dispose()
+    },
+    [caveMat, rockTex],
+  )
   const farMat = useMemo(() => farMaterial(detail), [detail])
   const farGeo = useMemo(() => createFarGeometry(farStep), [farStep])
   const chunkGeos = useMemo(() => Array.from({ length: POOL }, () => createChunkGeometry(stride)), [stride])

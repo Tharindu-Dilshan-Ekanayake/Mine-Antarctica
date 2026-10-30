@@ -140,29 +140,32 @@ export function digRadius(pickaxe) {
   return 0.75 + Math.sqrt(pickaxe.mineSize) * 0.11
 }
 
-/** Clear height of a tunnel bite above your feet: room to walk in without ducking. */
-export const TUNNEL_HEIGHT = 2.35
+/** A tunnel bite is this much wider than the plain ball one swing carves. */
+export const TUNNEL_SCALE = 1.4
+
+/** Clear height of a tunnel bite above your feet: room to walk in with plenty to spare (m). */
+export const tunnelHeight = (r) => Math.max(4, r * TUNNEL_SCALE * 2.6)
 
 /**
  * The balls one swing removes. A swing roughly level with you, at the wall in front of
- * you, is a tunnel bite: two balls stacked from your feet up past your head, so every
- * swing opens a passage you can walk straight into - tunnelling never means chipping
- * at the floor and the ceiling separately. Any other swing (down a shaft, up into a
+ * you, is a tunnel bite: two big balls stacked from your feet up well past your head,
+ * so every swing opens a roomy passage you can walk straight into - a corridor about two
+ * characters high and wide, not a crawl space. Any other swing (down a shaft, up into a
  * ceiling, a far-off face) removes the one ball you aimed at. Shared by the server,
  * which carves them, and the client, which previews them.
  *
  * @returns {{ x: number, y: number, z: number, r: number }[]}
  */
 export function digBalls(x, y, z, dy, r, feetY) {
+  const rr = r * TUNNEL_SCALE
+  const height = tunnelHeight(r)
   const level = Math.abs(dy) < 0.55
-  const atWall = y > feetY - 0.4 && y < feetY + TUNNEL_HEIGHT + 0.3
-  if (!level || !atWall || r * 2 >= TUNNEL_HEIGHT) return [{ x, y, z, r }]
-  // Floor flush with your feet, top a little over your head.
-  const low = feetY + r
-  const high = feetY + TUNNEL_HEIGHT - r
+  const atWall = y > feetY - 0.4 && y < feetY + height + 0.3
+  if (!level || !atWall) return [{ x, y, z, r }]
+  // Floor flush with your feet, roof high over your head.
   return [
-    { x, y: low, z, r },
-    { x, y: high, z, r },
+    { x, y: feetY + rr, z, r: rr },
+    { x, y: feetY + height - rr, z, r: rr },
   ]
 }
 

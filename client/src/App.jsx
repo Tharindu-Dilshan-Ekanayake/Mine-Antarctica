@@ -114,7 +114,7 @@ export default function App() {
   }, [finishLoading])
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden">
       <GameCanvas onAvatarReady={finishLoading} />
       <div ref={labelsRef} className="pointer-events-none absolute inset-0 z-[5] overflow-hidden" />
       <HUD />

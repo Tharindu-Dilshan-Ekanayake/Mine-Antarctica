@@ -781,7 +781,7 @@ canvas {
     flex-direction: column;
     gap: 10px;
     width: min(286px, calc(100vw - 16px));
-    max-height: calc(100vh - 70px);
+    max-height: calc(100dvh - 70px);
     overflow-y: auto;
     padding: 12px;
     border-radius: 18px;
@@ -847,7 +847,7 @@ canvas {
   }
   [data-hud='sell'] {
     right: 10px;
-    top: 26vh;
+    top: 26dvh;
     scale: 0.72;
     transform-origin: top right;
   }
@@ -884,7 +884,8 @@ body:has([data-hud='drawer']) :is([data-hud='action'], [data-hud='jump'], [data-
 @media (max-height: 560px) and (min-width: 600px) {
   [data-hud='drawer'] {
     display: grid;
-    grid-template-columns: 216px auto;
+    grid-template-columns: 300px auto;
+    column-gap: 14px;
     align-items: start;
     width: auto;
   }
@@ -915,7 +916,7 @@ body:has([data-hud='drawer']) :is([data-hud='action'], [data-hud='jump'], [data-
   /* The menu drawer opens under the column, full width. */
   [data-hud='drawer'] {
     top: calc(var(--hud-gap) + 4 * 44px + 3 * 8px + 8px);
-    max-height: calc(100vh - 230px);
+    max-height: calc(100dvh - 230px);
   }
   /* The guide's line leaves the column's side free (body: wins over the base rules below). */
   body .tut-card {

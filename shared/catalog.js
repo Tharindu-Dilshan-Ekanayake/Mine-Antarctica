@@ -248,7 +248,22 @@ export const crystalScale = (weight) => Math.min(9, 0.42 * Math.cbrt(weight))
  * onto rarer tiers exponentially, which is what makes big garden luck matter.
  * `minRarity` forces at least that tier (radars).
  */
-export function rollCrystal(rand, zone, luck = 1, minRarity = 0) {
+/** How far down (m, below the mountain's surface) each step up in crystal size starts. */
+export const SIZE_DEPTH_STEP = 8
+
+/**
+ * The sizes crystals can be at `depth` metres below the mountain's surface: small ones
+ * near the entrance (Tiny and Small at the start of a dig), and the deeper you go the
+ * bigger and heavier they get - Medium from 8 m, Large from 16 m, Huge from 24 m,
+ * Gargantuan from 32 m - with the smallest ones dropping out of the deepest rock.
+ * @returns {{ min: number, max: number }} size band indices (see SIZES)
+ */
+export function sizeRangeAtDepth(depth) {
+  const tier = Math.max(0, Math.floor(depth / SIZE_DEPTH_STEP))
+  return { min: Math.max(0, tier - 2), max: Math.min(SIZES.length - 1, 1 + tier) }
+}
+
+export function rollCrystal(rand, zone, luck = 1, minRarity = 0, maxSize = SIZES.length - 1, minSize = 0) {
   const base = ZONE_WEIGHTS[Math.max(0, Math.min(ZONE_WEIGHTS.length - 1, zone))]
   const weights = base.map((w, r) => (r < minRarity ? 0 : w * Math.pow(luck, r * 0.6)))
   if (weights.every((w) => w === 0)) weights[weights.length - 1] = 1
@@ -256,7 +271,8 @@ export function rollCrystal(rand, zone, luck = 1, minRarity = 0) {
   const pool = CRYSTALS.filter((c) => c.rarity === rarity)
   const type = pool[Math.floor(rand() * pool.length)]
 
-  const sizeWeights = SIZES.map((s, i) => s.p * Math.pow(Math.min(luck, 50), i * 0.25))
+  // `maxSize` caps the size band (a beginner's finds stay small enough to carry).
+  const sizeWeights = SIZES.map((s, i) => (i > maxSize || i < minSize ? 0 : s.p * Math.pow(Math.min(luck, 50), i * 0.25)))
   const sizeIndex = pickWeighted(sizeWeights, rand())
   const [lo, hi] = SIZES[sizeIndex].w
   // Bias toward the low end of the band, so big ones stay special.

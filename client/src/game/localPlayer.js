@@ -63,6 +63,8 @@ export const aim = {
   /** Centre height and vertical half-size of what the swing removes (taller for a tunnel bite). */
   my: 0,
   sy: 1,
+  /** Horizontal radius of what the swing removes (wider for a tunnel bite). */
+  wr: 1,
   /** Why the aimed spot can't be dug ('' if it can). */
   problem: '',
 }

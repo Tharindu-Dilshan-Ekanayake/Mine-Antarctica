@@ -60,10 +60,10 @@ export function SellDialog() {
 
   return (
     <>
-      <div data-hud="sell" className="pointer-events-auto absolute right-[8vw] top-[42vh] z-20 flex flex-col gap-2">
+      <div data-hud="sell" className="pointer-events-auto absolute right-[8vw] top-[42dvh] z-20 flex flex-col gap-2">
         <div className="cartoon-thin mb-1 max-w-[340px] text-[19px] font-bold text-white">{line}</div>
         {options.map(([label, fn], i) => (
-          <button type="button" key={label} onClick={fn} data-tut={i === 1 ? 'sell-one' : undefined} className="cartoon-thin text-left text-[22px] font-bold text-[#ffd23a] hover:text-white">
+          <button type="button" key={label} onClick={fn} data-tut={i === 1 ? 'sell-one' : undefined} data-tut-side={i === 1 ? 'left' : undefined} className="cartoon-thin text-left text-[22px] font-bold text-[#ffd23a] hover:text-white">
             {i + 1}.) [&quot;{label}&quot;]
           </button>
         ))}

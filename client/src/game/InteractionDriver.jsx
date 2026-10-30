@@ -179,7 +179,7 @@ function AimMarker() {
     if (!m.visible) return
     const pulse = 1 + Math.sin(clock.elapsedTime * 6) * 0.04
     m.position.set(aim.x, aim.my, aim.z)
-    m.scale.set(aim.r * pulse, aim.sy * pulse, aim.r * pulse)
+    m.scale.set(aim.wr * pulse, aim.sy * pulse, aim.wr * pulse)
     m.rotation.y = clock.elapsedTime * 0.6
     markerMat.color.copy(aim.problem ? BAD : OK)
     fillMat.color.copy(markerMat.color)
