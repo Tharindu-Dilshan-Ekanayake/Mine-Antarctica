@@ -47,7 +47,7 @@ const HALO_CAPACITY = 128
 const haloGeometry = new PlaneGeometry(1, 1)
 
 /** Rare crystals (and any mutated one) get a glow halo. */
-const hasHalo = (typeId, mutation) => (CRYSTAL_BY_ID[typeId]?.rarity ?? 0) >= 2 || !!mutation
+const hasHalo = (typeId, mutation, size = 0) => (CRYSTAL_BY_ID[typeId]?.rarity ?? 0) >= 2 || !!mutation || size >= 3
 
 /** Loot beams over loose Rare+ crystals (and Legendary+ ones in gardens). */
 const BEAM_CAPACITY = 48
@@ -198,12 +198,13 @@ export default function CrystalField() {
         sparkles += 1
       }
     }
-    const putHalo = (typeId, mutation, x, y, z, s) => {
-      if (!halo || halos >= HALO_CAPACITY || !hasHalo(typeId, mutation)) return -1
+    const putHalo = (typeId, mutation, x, y, z, s, size = 0) => {
+      if (!halo || halos >= HALO_CAPACITY || !hasHalo(typeId, mutation, size)) return -1
       const rarity = CRYSTAL_BY_ID[typeId]?.rarity ?? 0
       _dummy.position.set(x, y, z)
       _dummy.rotation.set(0, 0, 0)
-      _dummy.scale.setScalar(s * (2 + rarity * 0.35))
+      // The bigger the crystal, the wider its glow reaches.
+      _dummy.scale.setScalar(s * (2 + rarity * 0.35 + size * 0.2))
       _dummy.updateMatrix()
       halo.setMatrixAt(halos, _dummy.matrix)
       halo.setColorAt(halos, crystalColor(typeId, mutation, _color, hiddenMutations))
@@ -237,10 +238,11 @@ export default function CrystalField() {
         const size = sizeOf(c.size, c.weight)
         const rarity = CRYSTAL_BY_ID[c.type]?.rarity ?? 0
         const slot = put(c.type, c.mutation, c.x, y, c.z, s, c.rot, size)
-        const h = putHalo(c.type, c.mutation, c.x, y + s * 0.5, c.z, s)
-        // Waiting to be picked up: Rare and up shine a beam you can spot from afar.
-        if (c.state === 1 && rarity >= 2) putBeam(rarity, size, c.x, y, c.z)
-        if (rarity >= 3) putSparkles(c.type, c.mutation, c.x, y + s * 0.55, c.z, s)
+        const h = putHalo(c.type, c.mutation, c.x, y + s * 0.5, c.z, s, size)
+        // Waiting to be picked up: Rare and up - and any Huge one, whatever its rarity -
+        // shine a beam you can spot from afar.
+        if (c.state === 1 && (rarity >= 2 || size >= 4)) putBeam(Math.max(rarity, size >= 4 ? 3 : 0), size, c.x, y, c.z)
+        if (rarity >= 3 || size >= 3) putSparkles(c.type, c.mutation, c.x, y + s * 0.55, c.z, s)
         celebrate(prev.current.get(id), c, me, y, s)
         seen.set(id, { state: c.state, x: c.x, y, z: c.z, value: c.value, weight: c.weight, type: c.type })
         if (c.state === 1 && slot >= 0 && loose.n < MAX_LOOSE) {
@@ -262,10 +264,10 @@ export default function CrystalField() {
           const size = sizeOf(it.size, it.weight)
           const rarity = CRYSTAL_BY_ID[it.type]?.rarity ?? 0
           put(it.type, it.mutation, it.x, gy, it.z, s, it.rot, size)
-          putHalo(it.type, it.mutation, it.x, gy + s * 0.5, it.z, s)
+          putHalo(it.type, it.mutation, it.x, gy + s * 0.5, it.z, s, size)
           // Garden trophies: Legendary and Mythic show off with a beam of their own.
           if (rarity >= 4) putBeam(rarity, size, it.x, gy, it.z)
-          if (rarity >= 3) putSparkles(it.type, it.mutation, it.x, gy + s * 0.55, it.z, s)
+          if (rarity >= 3 || size >= 3) putSparkles(it.type, it.mutation, it.x, gy + s * 0.55, it.z, s)
           if (crystalCollisions) solids.push({ x: it.x, z: it.z, r: s * 0.38 })
         })
       })

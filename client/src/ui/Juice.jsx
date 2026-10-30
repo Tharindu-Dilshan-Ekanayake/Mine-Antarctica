@@ -66,8 +66,10 @@ export function Splash() {
       onNetEvent('discovered', ({ type }) => show({ type, title: 'NEW CRYSTAL!' })),
       onNetEvent('found', ({ type, size, weight, mutation }) => {
         const rarity = CRYSTAL_BY_ID[type]?.rarity ?? 0
-        if (rarity >= 3 || SIZES[size]?.name === 'Gargantuan') {
-          show({ type, size, weight, mutation, title: `${RARITIES[rarity].name.toUpperCase()} FIND!` })
+        if (rarity >= 3 || size >= 4) {
+          // A rare one, or a giant: "HUGE FIND!" / "GARGANTUAN FIND!" for the big ones.
+          const title = size >= 4 ? `${SIZES[size].name.toUpperCase()} FIND!` : `${RARITIES[rarity].name.toUpperCase()} FIND!`
+          show({ type, size, weight, mutation, title })
         }
       }),
     ]

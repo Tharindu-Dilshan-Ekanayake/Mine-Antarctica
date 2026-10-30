@@ -23,18 +23,30 @@ export function makeCrystalMaterial(lite = false) {
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
 attribute vec2 aFx;
-varying vec2 vFx;`)
+varying vec2 vFx;
+varying float vLocalY;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-  vFx = aFx;`)
+  vFx = aFx;
+  vLocalY = position.y;`)
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform float uTime;
-varying vec2 vFx;`)
+varying vec2 vFx;
+varying float vLocalY;`)
       .replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
   float rar = vFx.x;
   float big = vFx.y;
+  // Gem look: every facet catches the light a little differently (keyed off its world
+  // direction, so it doesn't flicker as you turn), the colour deepens towards the base,
+  // and a sharp white glint flashes off the facets facing the sun.
+  vec3 fnW = inverseTransformDirection(normal, viewMatrix);
+  float facet = fract(sin(dot(floor(fnW * 3.0 + 0.5), vec3(12.99, 78.23, 37.72))) * 43758.55);
+  diffuseColor.rgb *= (0.74 + facet * 0.5) * mix(0.6, 1.2, smoothstep(0.0, 0.9, vLocalY));
+  vec3 sunV = normalize((viewMatrix * vec4(0.45, 0.8, 0.35, 0.0)).xyz);
+  float spec = pow(max(dot(normal, normalize(sunV + normalize(vViewPosition))), 0.0), 40.0);
+  totalEmissiveRadiance += vec3(1.0, 0.98, 0.94) * spec * 1.5;
   float ph = dot(floor(vWPos * 0.6), vec3(1.7, 3.1, 2.3));
   float glint = pow(max(0.0, sin(uTime * (1.8 + rar * 0.45) + ph + vWPos.y * 3.0)), 14.0 - rar);
   float rim = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 3.0);
@@ -54,11 +66,13 @@ varying vec2 vFx;`)
     float h = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
     spark = step(0.84, h) * pow(max(0.0, sin(uTime * 4.0 + h * 40.0)), 8.0) * 2.2;
   }
-  totalEmissiveRadiance += body * (0.24 + rar * 0.05 + rim * (0.55 + rar * 0.1 + big * 0.05) + glint * (0.8 + rar * 0.2) + beat)
+  // Big ones (Large and up) glow from within, slowly breathing: the bigger, the brighter.
+  float inner = max(0.0, big - 2.0) * (0.09 + 0.05 * sin(uTime * 1.7 + ph));
+  totalEmissiveRadiance += body * (0.24 + rar * 0.05 + inner + rim * (0.55 + rar * 0.1 + big * 0.05) + glint * (0.8 + rar * 0.2) + beat)
     + vec3(1.0, 0.93, 0.75) * spark;`,
       )
   }
-  mat.customProgramCacheKey = () => (lite ? 'crystalShimmerLite2' : 'crystalShimmer2')
+  mat.customProgramCacheKey = () => (lite ? 'crystalGemLite' : 'crystalGem')
   return mat
 }
 

@@ -86,7 +86,7 @@ export default function useUITicker() {
         sfx.find(t?.rarity ?? 0)
         // Everyday finds speak for themselves (the crystal pops out right there); only
         // the special ones get a line on screen.
-        if ((t?.rarity ?? 0) < 2 && !mutation) return
+        if ((t?.rarity ?? 0) < 2 && !mutation && size < 3) return
         useUI.getState().toast(
           `Found a ${SIZES[size]?.name} ${r.name}${mutation ? ` ${mutation}` : ''} crystal! (${weight} kg)`,
           'rare',
