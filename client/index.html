@@ -3,12 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Power Per Click</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#2f7fd8" />
+    <title>Mine Antarctica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Luckiest+Guy&display=swap"
+      rel="stylesheet"
+    />
 
-    <!-- Bloxity SDK. Exposes itself as window.Legion.SDK.
-         Must load before the Vite entry script below. -->
-    <script src="https://sdk.bloxity.io/v1/legion-sdk.min.js"></script>
+    <!-- Boxity SDK. Exposes itself as window.Legion.SDK. Async so it never blocks the
+         first paint; src/bloxity/sdk.js waits for it to appear (and the matchmaker is
+         only asked for a seat once it has). -->
+    <script async src="https://sdk.bloxity.io/v1/legion-sdk.min.js"></script>
+
+    <!-- The avatar base body, fetched from the very start (the game opens with your
+         avatar), and the avatar CDN's connection, for the clothes. The CDN is the one
+         Boxity told this page (window.BLOXITY_ENV), else production - the same rule as
+         src/bloxity/env.js. -->
+    <script>
+      ;(function () {
+        var env = window.BLOXITY_ENV
+        var cdn = (env && env.apiUrl && env.staticUrl) || 'https://static.bloxity.io'
+        var head = document.head
+        var preconnect = document.createElement('link')
+        preconnect.rel = 'preconnect'
+        preconnect.href = cdn
+        preconnect.crossOrigin = 'anonymous'
+        head.appendChild(preconnect)
+        var body = document.createElement('link')
+        body.rel = 'preload'
+        body.as = 'fetch'
+        body.href = cdn + '/avatars/player.glb'
+        body.crossOrigin = 'anonymous'
+        body.setAttribute('fetchpriority', 'high')
+        head.appendChild(body)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

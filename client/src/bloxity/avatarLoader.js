@@ -2,7 +2,7 @@ import { TextureLoader } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 
-import { configureAvatarTexture } from '../game/avatarRig'
+import { configureAvatarTexture } from '../game/avatar/avatarRig'
 
 /**
  * Imperative loaders for the equipped-cosmetic assets.

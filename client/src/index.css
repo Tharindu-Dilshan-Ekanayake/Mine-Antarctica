@@ -2,8 +2,18 @@
 
 :root {
   color-scheme: dark;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* Ice theme. */
+  --ice-deep: #0c1a33;
+  --ice-mid: #16325c;
+  --ice-hi: #2a5fa3;
+  --ice-edge: #bfeaff;
+  --ice-glow: rgba(127, 230, 255, 0.55);
+  --snow: #f4fbff;
+  font-family: 'Fredoka', 'Arial Rounded MT Bold', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  --panel: #111318;
+  --panel-2: #1c1f27;
+  --stroke: #0b0d12;
 }
 
 html,
@@ -12,10 +22,1545 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
+  background: #9fc8ea;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* The R3F canvas fills its container; the HUD is absolutely positioned over it. */
 canvas {
   display: block;
   touch-action: none;
+}
+
+/* Cartoon text: white fill, thick dark outline, like the Roblox HUD. */
+.cartoon {
+  font-family: 'Luckiest Guy', 'Fredoka', sans-serif;
+  letter-spacing: 0.02em;
+  color: #fff;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0.22em var(--stroke);
+  text-shadow: 0 0.09em 0 var(--stroke);
+}
+.cartoon-thin {
+  font-weight: 700;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0.16em var(--stroke);
+  text-shadow: 0 0.06em 0 var(--stroke);
+}
+
+.panel {
+  position: relative;
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(127, 200, 255, 0.18), transparent 60%),
+    linear-gradient(180deg, var(--ice-mid), var(--ice-deep) 70%);
+  border: 3px solid var(--ice-edge);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 3px #0a1426,
+    0 12px 0 rgba(0, 0, 0, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    0 0 28px var(--ice-glow);
+}
+
+/* Frosted HUD card: icy glass with a bright top edge. */
+.hud-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 45%),
+    linear-gradient(160deg, rgba(30, 62, 110, 0.92), rgba(12, 24, 48, 0.92));
+  border: 2px solid rgba(191, 234, 255, 0.85);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px rgba(8, 16, 32, 0.9),
+    0 6px 0 rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* A drift of snow along the top edge of a card. */
+.snowcap {
+  position: relative;
+}
+.snowcap::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: -7px;
+  height: 12px;
+  border-radius: 10px 10px 6px 6px;
+  background:
+    radial-gradient(circle at 12% 100%, var(--snow) 6px, transparent 6.5px),
+    radial-gradient(circle at 30% 90%, var(--snow) 8px, transparent 8.5px),
+    radial-gradient(circle at 52% 100%, var(--snow) 6px, transparent 6.5px),
+    radial-gradient(circle at 72% 85%, var(--snow) 8px, transparent 8.5px),
+    radial-gradient(circle at 90% 100%, var(--snow) 6px, transparent 6.5px),
+    linear-gradient(var(--snow), var(--snow)) 0 100% / 100% 5px no-repeat;
+  filter: drop-shadow(0 1px 0 rgba(120, 170, 220, 0.8));
+  pointer-events: none;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 3px solid var(--stroke);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.25);
+  transition: transform 0.08s ease;
+  cursor: pointer;
+}
+.btn:active {
+  transform: translateY(2px) scale(0.98);
+}
+.btn:disabled {
+  filter: grayscale(0.7) brightness(0.7);
+  cursor: not-allowed;
+}
+.btn-green {
+  background: linear-gradient(#3df23a, #14b80f);
+}
+.btn-purple {
+  background: linear-gradient(#c13dff, #8a12d6);
+}
+.btn-yellow {
+  background: linear-gradient(#ffe46a, #f5b812);
+}
+.btn-red {
+  background: linear-gradient(#ff4d4d, #c40d0d);
+}
+.btn-blue {
+  background: linear-gradient(#3db8ff, #0f7ed6);
+}
+.btn-dark {
+  background: linear-gradient(#3a3f4d, #232733);
+}
+
+.round-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #2a5fa3, #12284d);
+  border: 2px solid rgba(191, 234, 255, 0.8);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+}
+.pill-btn {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #2a5fa3, #12284d);
+  border: 2px solid rgba(191, 234, 255, 0.8);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  font-family: 'Luckiest Guy', 'Fredoka', sans-serif;
+  letter-spacing: 0.03em;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #4a5066;
+  border-radius: 8px;
+}
+
+/* ---- World labels (DOM, positioned from the frame loop) ---- */
+.world-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform;
+  text-align: center;
+  white-space: nowrap;
+  transform-origin: 50% 100%;
+}
+.lbl-player {
+  font-family: 'Luckiest Guy', sans-serif;
+  font-size: 22px;
+  color: #fff;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 4px #0b0d12;
+}
+.lbl-crystal {
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.15;
+  color: #fff;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 4px #0b0d12;
+}
+.lbl-crystal.small {
+  font-size: 12px;
+  -webkit-text-stroke: 3px #0b0d12;
+}
+.lbl-name {
+  font-family: 'Luckiest Guy', sans-serif;
+  font-size: 1.35em;
+}
+.lbl-size {
+  font-size: 1.15em;
+}
+.lbl-val {
+  color: #ffd84a;
+  font-size: 1.25em;
+}
+.lbl-luck {
+  color: #5cff6e;
+}
+.lbl-owner {
+  color: #c9d1e6;
+  font-size: 0.85em;
+}
+.lbl-prompt {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 3px #0b0d12;
+}
+.lbl-prompt .key {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(20, 22, 28, 0.9);
+  border: 2px solid #fff;
+  -webkit-text-stroke: 0;
+}
+.lbl-hp {
+  width: 210px;
+}
+.lbl-hp-num {
+  font-family: 'Luckiest Guy', sans-serif;
+  font-size: 26px;
+  color: #fff;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 5px #0b0d12;
+}
+.lbl-hp-bar {
+  height: 18px;
+  border-radius: 6px;
+  background: #1c1f27;
+  border: 3px solid #0b0d12;
+  overflow: hidden;
+}
+.lbl-hp-bar > div {
+  height: 100%;
+  transition: width 0.15s;
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.pop-in {
+  animation: pop-in 0.16s ease-out;
+}
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(-6deg);
+  }
+}
+.bob {
+  animation: bob 1.4s ease-in-out infinite;
+}
+
+/* ==== HUD layout ========================================================================
+   Every block is tagged with data-hud and placed here. All of them share one scale,
+   --hud-s (from the screen's shorter side, set by HUD.jsx), so the HUD keeps its
+   proportions from a phone to a big monitor. The hotbar also fits the width (--hud-bar). */
+:root {
+  --hud-s: 1;
+  --hud-bar: 1;
+  --hud-gap: 12px;
+}
+[data-hud='topright'],
+[data-hud='left'],
+[data-hud='money'],
+[data-hud='timer'],
+[data-hud='weather'],
+[data-hud='altbar'],
+[data-hud='hotbar'],
+[data-hud='backpack'],
+[data-hud='selected'],
+[data-hud='phonebar'],
+[data-hud='swap'],
+[data-hud='drawer'] {
+  position: absolute;
+}
+[data-hud='topright'] {
+  top: var(--hud-gap);
+  right: var(--hud-gap);
+  scale: var(--hud-s);
+  transform-origin: top right;
+}
+[data-hud='left'] {
+  left: var(--hud-gap);
+  top: 50%;
+  translate: 0 -50%;
+  scale: var(--hud-s);
+  transform-origin: left center;
+}
+[data-hud='money'] {
+  left: var(--hud-gap);
+  bottom: calc(var(--hud-gap) + 74px * var(--hud-s));
+  scale: var(--hud-s);
+  transform-origin: bottom left;
+}
+[data-hud='timer'] {
+  left: var(--hud-gap);
+  bottom: var(--hud-gap);
+  scale: var(--hud-s);
+  transform-origin: bottom left;
+}
+[data-hud='weather'] {
+  right: var(--hud-gap);
+  bottom: var(--hud-gap);
+  scale: var(--hud-s);
+  transform-origin: bottom right;
+}
+[data-hud='altbar'] {
+  right: calc(var(--hud-gap) + 8px);
+  top: 50%;
+  width: 70px;
+  height: 300px;
+  translate: 0 -50%;
+  scale: var(--hud-s);
+  transform-origin: right center;
+}
+[data-hud='hotbar'] {
+  left: 50%;
+  bottom: 8px;
+  translate: -50% 0;
+  scale: var(--hud-bar);
+  transform-origin: bottom center;
+}
+[data-hud='backpack'] {
+  left: 50%;
+  bottom: calc(16px + 66px * var(--hud-bar));
+  translate: -50% 0;
+  scale: var(--hud-s);
+  transform-origin: bottom center;
+}
+[data-hud='selected'] {
+  left: 50%;
+  bottom: calc(24px + 66px * var(--hud-bar) + 110px * var(--hud-s));
+  translate: -50% 0;
+  scale: var(--hud-s);
+  transform-origin: bottom center;
+}
+/* Phone-only pieces (the class selectors below would otherwise show them). */
+.phone-bar[data-hud='phonebar'],
+.hud-swap[data-hud='swap'] {
+  display: none;
+}
+
+/* ---- HUD pieces ---- */
+.hud-group {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(20, 44, 82, 0.72), rgba(8, 16, 34, 0.72));
+  border: 1px solid rgba(191, 234, 255, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.hud-group-col {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* A HUD button: icon over a small caption, on frosted glass. */
+.hb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 76px;
+  height: 76px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 50%),
+    linear-gradient(160deg, #2c63a8, #132b52);
+  border: 1.5px solid rgba(191, 234, 255, 0.75);
+  box-shadow:
+    0 4px 0 #0a1730,
+    0 6px 14px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.hb-sm {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  gap: 2px;
+}
+.hb:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.12);
+  box-shadow:
+    0 6px 0 #0a1730,
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    0 0 14px var(--ice-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.hb:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0a1730, inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.hb-label {
+  font: 700 11px/1 'Fredoka', system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+.hb-sm .hb-label {
+  font-size: 9.5px;
+}
+.hb-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: linear-gradient(#ff5a5a, #d01c1c);
+  border: 1.5px solid #fff;
+  font: 700 9px/1.2 'Fredoka', system-ui, sans-serif;
+  letter-spacing: 0.05em;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  animation: bob 1.4s ease-in-out infinite;
+}
+
+/* Stat card (altitude) and caption styles shared by the chips. */
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px 7px;
+  border-radius: 14px;
+  background: rgba(6, 14, 30, 0.55);
+  border: 1px solid rgba(191, 234, 255, 0.3);
+  color: #fff;
+}
+.stat-cap {
+  white-space: nowrap;
+  font: 700 9.5px/1.1 'Fredoka', system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(214, 238, 255, 0.8);
+}
+.stat-num {
+  font: 700 26px/1 'Fredoka', system-ui, sans-serif;
+  color: #fff;
+}
+.stat-num small {
+  margin-left: 1px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.stat-sub {
+  margin-top: 2px;
+  font: 600 10px/1 'Fredoka', system-ui, sans-serif;
+  color: rgba(214, 238, 255, 0.75);
+}
+.stat-sub b {
+  color: #ffd23a;
+}
+
+/* Currencies: icon, animated amount, optional + button. */
+.cur-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 8px 0 7px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, rgba(30, 62, 110, 0.9), rgba(10, 20, 42, 0.9));
+  border: 1.5px solid rgba(191, 234, 255, 0.7);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.cur-num {
+  min-width: 48px;
+  padding-right: 6px;
+  font: 400 26px/1 'Luckiest Guy', 'Fredoka', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  -webkit-text-stroke: 4px #0a1426;
+  paint-order: stroke fill;
+}
+.cur-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: linear-gradient(#4df24a, #14b80f);
+  border: 1.5px solid #fff;
+  font: 700 20px/1 'Fredoka', system-ui, sans-serif;
+  color: #fff;
+  box-shadow: 0 2px 0 #0b5e08;
+}
+.cur-add:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+/* Info chips: the reroll timer, weather, luck. */
+.info-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 14px 0 10px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(30, 62, 110, 0.88), rgba(10, 20, 42, 0.88));
+  border: 1.5px solid rgba(191, 234, 255, 0.6);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.info-chip:hover {
+  filter: brightness(1.12);
+}
+.info-chip:active {
+  transform: translateY(2px);
+}
+.info-chip-lg {
+  height: 60px;
+}
+.info-num {
+  font: 700 22px/1 'Fredoka', system-ui, sans-serif;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The way home: the HUD's primary action. */
+.base-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 60px;
+  padding: 0 20px 0 16px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(#3fd65a, #1d9a34);
+  border: 2px solid #eafff0;
+  box-shadow:
+    0 5px 0 #0d5a1c,
+    0 8px 16px rgba(0, 0, 0, 0.3);
+  font: 400 26px/1 'Luckiest Guy', 'Fredoka', system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: #fff;
+  -webkit-text-stroke: 4px #0d4a18;
+  paint-order: stroke fill;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+.base-btn:hover {
+  filter: brightness(1.08);
+}
+.base-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #0d5a1c;
+}
+
+/* Altitude meter: a slim icy track, your marker, the safe-warmth line and the cold. */
+.alt-peak {
+  position: absolute;
+  top: -20px;
+  right: 0;
+  width: 22px;
+  text-align: center;
+  font: 700 10px/1 'Fredoka', system-ui, sans-serif;
+  color: rgba(214, 238, 255, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.alt-track {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(rgba(20, 44, 82, 0.75), rgba(8, 16, 34, 0.75));
+  border: 1.5px solid rgba(191, 234, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.alt-fill {
+  position: absolute;
+  inset: auto 0 0 0;
+  background:
+    repeating-linear-gradient(160deg, rgba(255, 255, 255, 0.35) 0 4px, transparent 4px 12px),
+    linear-gradient(#bfe9ff, #4fb2f0 60%, #2b8fd8);
+  transition: height 0.3s ease;
+}
+.alt-cold {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(200, 245, 255, 0.75));
+}
+.alt-safe {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px dashed #fff;
+  display: flex;
+  justify-content: center;
+}
+.alt-safe svg {
+  translate: 0 -8px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+}
+.alt-you {
+  position: absolute;
+  right: 28px;
+  translate: 0 50%;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fff;
+  font: 700 12px/1 'Fredoka', system-ui, sans-serif;
+  color: #14304f;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: bottom 0.3s ease;
+}
+.alt-you::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  translate: 0 -50%;
+  border: 5px solid transparent;
+  border-right: 0;
+  border-left-color: #fff;
+}
+.alt-you.freezing {
+  background: #ff5a5a;
+  color: #fff;
+}
+.alt-you.freezing::after {
+  border-left-color: #ff5a5a;
+}
+
+/* ---- Phones (landscape or portrait) and short windows ----
+   Only what you play with stays on screen: joystick, dig / jump / E, BASE, the backpack
+   load and the climb meter. The swap button opens everything else in one drawer. */
+@media (max-height: 560px), (max-width: 720px) {
+  :root {
+    --hud-gap: 8px;
+  }
+  [data-hud='compass'],
+  [data-hud='topright'],
+  [data-hud='left'],
+  [data-hud='timer'],
+  [data-hud='weather'] {
+    display: none;
+  }
+  /* Your cash and candy: always on screen, small, on the left just above the joystick. */
+  [data-hud='money'] {
+    left: var(--hud-gap);
+    bottom: 150px;
+    scale: 0.6;
+    transform-origin: bottom left;
+  }
+  [data-hotbar='false'] :is([data-hud='hotbar'], [data-hud='selected']) {
+    display: none;
+  }
+  [data-hotbar='true'] :is([data-hud='hotbar'], [data-hud='selected']) {
+    animation: hud-reveal 0.22s ease-out both;
+  }
+  .hud-swap[data-hud='swap'] {
+    display: flex;
+    top: var(--hud-gap);
+    right: var(--hud-gap);
+    z-index: 3;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 50%),
+      linear-gradient(160deg, #2c63a8, #132b52);
+    border: 1.5px solid rgba(191, 234, 255, 0.85);
+    box-shadow: 0 3px 0 #0a1730, 0 0 12px var(--ice-glow);
+    transition: transform 0.15s ease;
+  }
+  [data-hud='swap']:active {
+    transform: scale(0.9);
+  }
+  [data-hud='swap'].open {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 50%),
+      linear-gradient(#ff6b6b, #b81d1d);
+  }
+  .phone-bar[data-hud='phonebar'] {
+    display: flex;
+    gap: 8px;
+    top: var(--hud-gap);
+    right: var(--hud-gap);
+    z-index: 3;
+  }
+  /* The menu button is one of the bar's buttons (a row in landscape). */
+  .phone-bar .hud-swap[data-hud='swap'] {
+    position: static;
+  }
+  .phone-bar .base-btn {
+    height: 44px;
+    padding: 0 12px 0 10px;
+    gap: 5px;
+    border-radius: 14px;
+    font-size: 19px;
+    -webkit-text-stroke: 3px #0d4a18;
+    box-shadow: 0 3px 0 #0d5a1c;
+  }
+  .phone-bar .base-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  .slots-btn {
+    display: flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 50%),
+      linear-gradient(160deg, #2c63a8, #132b52);
+    border: 1.5px solid rgba(191, 234, 255, 0.85);
+    box-shadow: 0 3px 0 #0a1730;
+    transition: transform 0.15s ease;
+  }
+  .slots-btn:active {
+    transform: scale(0.9);
+  }
+  .slots-btn.open {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 50%),
+      linear-gradient(160deg, #3fd65a, #1d7a34);
+  }
+  [data-hud='drawer'] {
+    top: calc(var(--hud-gap) + 52px);
+    right: var(--hud-gap);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(286px, calc(100vw - 16px));
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    padding: 12px;
+    border-radius: 18px;
+    background: linear-gradient(160deg, rgba(24, 52, 94, 0.94), rgba(8, 16, 34, 0.94));
+    border: 1.5px solid rgba(191, 234, 255, 0.6);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform-origin: top right;
+    animation: drawer-in 0.18s ease-out both;
+  }
+  [data-hud='drawer'] .drawer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    justify-items: center;
+  }
+  [data-hud='drawer'] .cur-chip {
+    height: 40px;
+  }
+  [data-hud='drawer'] .cur-num {
+    font-size: 22px;
+  }
+  [data-hud='drawer'] .info-chip {
+    height: 44px;
+    padding: 0 10px 0 8px;
+  }
+  [data-hud='drawer'] .info-num {
+    font-size: 17px;
+  }
+  [data-hud='drawer'] .stat-chip {
+    flex-direction: row;
+    gap: 8px;
+    justify-content: center;
+  }
+  [data-hud='drawer'] .stat-num {
+    font-size: 20px;
+  }
+  [data-hud='altbar'] {
+    height: 220px;
+    top: 46%;
+  }
+  [data-hud='backpack'] {
+    bottom: 10px;
+  }
+  [data-hotbar='true'] [data-hud='backpack'] {
+    bottom: calc(16px + 66px * var(--hud-bar));
+  }
+  [data-hud='zone'] {
+    top: 58px;
+    scale: 0.6;
+    transform-origin: top center;
+  }
+  [data-hud='toasts'] {
+    top: 100px;
+    scale: 0.62;
+    transform-origin: top center;
+  }
+  /* Two at a time on a phone: the newest. */
+  [data-hud='toasts'] > div:nth-last-child(n + 3) {
+    display: none;
+  }
+  .float-text {
+    scale: 0.72;
+  }
+  [data-hud='sell'] {
+    right: 10px;
+    top: 26vh;
+    scale: 0.72;
+    transform-origin: top right;
+  }
+  [data-hud='joystick'] {
+    bottom: 40px;
+    left: 3vw;
+    scale: 0.8;
+    transform-origin: bottom left;
+  }
+  [data-hud='action'] {
+    bottom: 48px;
+    right: 9vw;
+    scale: 0.82;
+  }
+  [data-hud='jump'] {
+    bottom: 140px;
+    right: 4vw;
+    scale: 0.8;
+  }
+  [data-hud='interact'] {
+    bottom: 140px;
+    right: calc(9vw + 80px);
+    scale: 0.85;
+  }
+  .panel h2 {
+    font-size: 22px;
+  }
+}
+/* While the drawer is open its buttons own the right side: dig / jump / E step aside. */
+body:has([data-hud='drawer']) :is([data-hud='action'], [data-hud='jump'], [data-hud='interact']) {
+  display: none;
+}
+/* Landscape phones: a wide, short drawer - money and timers left, the menus right. */
+@media (max-height: 560px) and (min-width: 600px) {
+  [data-hud='drawer'] {
+    display: grid;
+    grid-template-columns: 216px auto;
+    align-items: start;
+    width: auto;
+  }
+  [data-hud='drawer'] > * {
+    grid-column: 1;
+  }
+  [data-hud='drawer'] > .drawer-grid {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
+}
+/* Portrait phones: the top-right buttons are one column - BASE first, then the 1st-view,
+   items and menu buttons under it, all the same width. */
+@media (orientation: portrait) and (max-width: 720px) {
+  .phone-bar[data-hud='phonebar'] {
+    flex-direction: column;
+    align-items: stretch;
+    width: 104px;
+  }
+  .phone-bar .base-btn {
+    order: -1;
+    justify-content: center;
+  }
+  .phone-bar .slots-btn,
+  .phone-bar .hud-swap[data-hud='swap'] {
+    width: 100%;
+  }
+  /* The menu drawer opens under the column, full width. */
+  [data-hud='drawer'] {
+    top: calc(var(--hud-gap) + 4 * 44px + 3 * 8px + 8px);
+    max-height: calc(100vh - 230px);
+  }
+  /* The guide's line leaves the column's side free (body: wins over the base rules below). */
+  body .tut-card {
+    left: 8px;
+    translate: 0 0;
+    max-width: calc(100vw - 104px - 28px);
+  }
+  body .depth-chip,
+  body [data-hud='zone'] {
+    left: calc(50% - 52px);
+  }
+}
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    scale: 0.92;
+  }
+}
+/* Opacity only: the blocks' own translate/scale must stay untouched. */
+@keyframes hud-reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Portrait phones: the touch controls sit a little higher, clear of the backpack. */
+@media (max-width: 520px) {
+  [data-hud='money'] {
+    bottom: 232px;
+  }
+  [data-hud='zone'] {
+    top: 96px;
+  }
+  [data-hud='joystick'] {
+    bottom: 112px;
+  }
+  [data-hud='action'] {
+    bottom: 112px;
+  }
+  [data-hud='jump'] {
+    bottom: 210px;
+  }
+  [data-hud='interact'] {
+    bottom: 210px;
+  }
+}
+
+.float-text {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  font-family: 'Luckiest Guy', sans-serif;
+  white-space: nowrap;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 5px #0b0d12;
+}
+
+/* ---- Juice: hover/press feedback, slots, shines, splash, loading snow ---- */
+.btn:not(:disabled):hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px) scale(1.02);
+}
+.round-btn,
+.pill-btn,
+.hud-card {
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.round-btn:hover,
+.pill-btn:hover,
+button.hud-card:hover {
+  transform: scale(1.07);
+  filter: brightness(1.2);
+}
+.round-btn:active,
+.pill-btn:active,
+button.hud-card:active {
+  transform: scale(0.95);
+}
+
+.hot-slot {
+  transition: transform 0.15s cubic-bezier(0.3, 1.6, 0.5, 1), background 0.15s;
+}
+.hot-slot:hover {
+  transform: translateY(-3px);
+}
+.hot-slot.selected {
+  transform: translateY(-8px) scale(1.06);
+}
+
+@keyframes bump {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.22) rotate(-2deg); }
+  100% { transform: scale(1); }
+}
+.bump {
+  animation: bump 0.45s ease-out;
+}
+
+/* A light sweep across shop cards every few seconds. */
+@keyframes shine-sweep {
+  0%, 70% { transform: translateX(-160%) skewX(-20deg); }
+  100% { transform: translateX(260%) skewX(-20deg); }
+}
+.shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: shine-sweep 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes toast-in {
+  from { transform: translateY(14px) scale(0.9); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+/* Toasts sit at the top, out of the way of what you're mining - three at most. */
+[data-hud='toasts'] {
+  top: calc(104px * var(--hud-s));
+}
+[data-hud='toasts'] > div {
+  animation: toast-in 0.22s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+[data-hud='toasts'] > div:nth-last-child(n + 4) {
+  display: none;
+}
+/* The zone banner: in, a few seconds, out. */
+.zone-flash {
+  animation: zone-flash 3.5s ease both;
+}
+@keyframes zone-flash {
+  0% {
+    opacity: 0;
+    scale: 0.8;
+  }
+  10%,
+  80% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Find / discovery splash. */
+@keyframes rays-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes splash-life {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes splash-pop {
+  0% { transform: scale(0.3) rotate(-12deg); }
+  60% { transform: scale(1.12) rotate(3deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes gem-float {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-8px) rotate(6deg); }
+}
+.splash {
+  animation: splash-life 2.6s ease-in-out forwards;
+}
+/* Keep the world readable under it: labels and toasts step aside. */
+.splash-card {
+  margin-top: -18vh;
+}
+.splash-rays {
+  position: absolute;
+  width: 760px;
+  height: 760px;
+  max-width: 160vw;
+  max-height: 160vw;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, var(--ray) 0deg 10deg, transparent 10deg 24deg);
+  mask-image: radial-gradient(circle, #000 15%, transparent 65%);
+  -webkit-mask-image: radial-gradient(circle, #000 15%, transparent 65%);
+  opacity: 0.55;
+  animation: rays-spin 9s linear infinite;
+}
+.splash-card {
+  animation: splash-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.splash-gem {
+  animation: gem-float 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.8));
+}
+
+/* Loading screen. */
+@keyframes flake-fall {
+  from { transform: translateY(-5vh) translateX(0); }
+  to { transform: translateY(105vh) translateX(30px); }
+}
+.css-flake {
+  position: absolute;
+  top: 0;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.85;
+  animation: flake-fall linear infinite;
+}
+@keyframes title-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.03); }
+}
+.title-bounce {
+  animation: title-bounce 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-rays, .shine::after, .title-bounce, .css-flake, .bob {
+    animation: none;
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+.twinkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twinkle 1.4s ease-in-out infinite;
+}
+
+@keyframes pick-float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-6px) rotate(4deg); }
+}
+.pick-float {
+  animation: pick-float 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.35));
+}
+
+.lbl-hp-what {
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 4px #0b0d12;
+  margin-bottom: 2px;
+}
+.lbl-weight {
+  color: #7fe6ff;
+}
+.lbl-prompt.full {
+  color: #ff5a5a;
+}
+.lbl-prompt.full .key {
+  border-color: #ff5a5a;
+}
+.lbl-load {
+  color: #ffd84a;
+  font-size: 13px;
+}
+
+@keyframes bag-full {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 70, 70, 0.0); }
+  50% { box-shadow: 0 0 18px 4px rgba(255, 70, 70, 0.75); }
+}
+.bag-full {
+  animation: bag-full 1.1s ease-in-out infinite;
+}
+
+/* ---- Ice-theme pieces ---- */
+.hot-slot {
+  background: linear-gradient(170deg, rgba(42, 90, 150, 0.85), rgba(12, 24, 48, 0.9)) !important;
+  border-color: rgba(191, 234, 255, 0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+.hot-slot.selected {
+  background: linear-gradient(170deg, rgba(110, 200, 255, 0.95), rgba(30, 90, 170, 0.95)) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 16px var(--ice-glow), inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+.ice-pill {
+  border-radius: 999px;
+  padding: 2px 14px 2px 6px;
+  background: linear-gradient(160deg, rgba(30, 62, 110, 0.85), rgba(12, 24, 48, 0.85));
+  border: 2px solid rgba(191, 234, 255, 0.7);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+.modal-head {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 60%),
+    linear-gradient(90deg, #2a5fa3, #3d8bd8 50%, #2a5fa3);
+  border-bottom: 3px solid var(--ice-edge);
+}
+
+/* ---- Death screen (frozen) ---- */
+.death-frost {
+  background: radial-gradient(ellipse at center, rgba(120, 190, 255, 0.12) 30%, rgba(170, 220, 255, 0.55) 100%);
+  animation: frost-in 0.5s ease-out both;
+}
+@keyframes frost-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.death-flake {
+  color: #dff4ff;
+  text-shadow: 0 0 18px var(--ice-glow), 0 3px 0 rgba(0, 0, 0, 0.35);
+  animation: flake-spin 6s linear infinite;
+}
+@keyframes flake-spin {
+  to { transform: rotate(360deg); }
+}
+.death-ring {
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.25);
+  animation: ring-pulse 1s ease-in-out infinite;
+}
+@keyframes ring-pulse {
+  50% { transform: scale(1.12); }
+}
+
+/* ---- Underground depth readout ---- */
+.depth-chip {
+  position: absolute;
+  left: 50%;
+  top: calc(100px * var(--hud-s));
+  translate: -50% 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, rgba(90, 50, 30, 0.85), rgba(40, 20, 12, 0.85));
+  border: 1.5px solid #e0a060;
+  font: 700 14px/1.2 'Fredoka', system-ui, sans-serif;
+  color: #ffe2b8;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+@media (max-height: 560px), (max-width: 720px) {
+  .depth-chip {
+    top: 58px;
+    font-size: 12px;
+  }
+  body:has(.tut-card) .depth-chip {
+    top: 90px;
+  }
+}
+body:has(.tut-card) .depth-chip {
+  top: calc(100px * var(--hud-s) + 8px);
+}
+
+/* ---- First-time guide ---- */
+/* Welcome card for a brand-new miner. */
+.tut-welcome-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 14, 30, 0.35);
+}
+.tut-welcome {
+  width: min(360px, calc(100vw - 32px));
+  scale: var(--modal-s, 1);
+}
+.tut-welcome-icon {
+  font-size: 44px;
+  line-height: 1;
+  animation: bob 1.4s ease-in-out infinite;
+}
+.tut-welcome-steps {
+  margin: 12px auto 0;
+  max-width: 260px;
+  padding-left: 22px;
+  text-align: left;
+  list-style: decimal;
+  font: 600 16px/1.6 'Fredoka', system-ui, sans-serif;
+  color: #d6eeff;
+}
+.tut-welcome-steps b {
+  color: #ffd23a;
+}
+.tut-welcome-hint {
+  margin-top: 10px;
+  font: 700 14px/1.3 'Fredoka', system-ui, sans-serif;
+  color: #7fe6ff;
+}
+/* "Nice!" when a guide step is done: pops under the guide line and fades. */
+.tut-done-pop {
+  position: absolute;
+  left: 50%;
+  top: calc(104px * var(--hud-s));
+  translate: -50% 0;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: linear-gradient(#4df24a, #14b80f);
+  border: 2px solid #fff;
+  font: 400 20px/1.1 'Luckiest Guy', 'Fredoka', system-ui, sans-serif;
+  color: #fff;
+  -webkit-text-stroke: 3px #0d4a18;
+  paint-order: stroke fill;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  animation: done-pop 1.6s ease-out both;
+  pointer-events: none;
+}
+@keyframes done-pop {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+  }
+  15% {
+    opacity: 1;
+    scale: 1.15;
+  }
+  25% {
+    scale: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: -50% -14px;
+  }
+}
+/* First person on touch: where the pickaxe aims. */
+.fp-dot {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  width: 10px;
+  height: 10px;
+  translate: -50% -50%;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(10, 20, 40, 0.65), 0 0 0 7px rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+.tut-card {
+  position: absolute;
+  top: calc(60px * var(--hud-s));
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 24px);
+  padding: 6px 8px 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(160deg, rgba(36, 76, 132, 0.88), rgba(12, 24, 48, 0.88));
+  border: 1.5px solid #ffd23a;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), 0 0 12px rgba(255, 210, 58, 0.3);
+  animation: tut-in 0.3s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.tut-card.tut-done {
+  border-color: #5cff8a;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), 0 0 18px rgba(92, 255, 138, 0.5);
+}
+@keyframes tut-in {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+.tut-dots {
+  display: flex;
+  gap: 4px;
+}
+.tut-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.tut-dots span.done {
+  background: #5cff8a;
+}
+.tut-dots span.now {
+  background: #ffd23a;
+  box-shadow: 0 0 6px #ffd23a;
+}
+.tut-badge {
+  font-size: 18px;
+  line-height: 1;
+  color: #ffd23a;
+  text-shadow: 0 0 10px rgba(255, 210, 58, 0.8);
+}
+.tut-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 15px/1.2 'Fredoka', system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.tut-skip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font: 700 11px/1 'Fredoka', system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.75);
+}
+.tut-skip:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+/* The zone banner moves down a little, under the guide's line. */
+body:has(.tut-card) [data-hud='zone'] {
+  translate: -50% 34px;
+}
+/* The bouncing arrow on the button to press. Its anchor is the arrow's tip. */
+.tut-pointer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  translate: -50% -100%;
+  transition: opacity 0.2s ease;
+  animation: tut-bounce 0.8s ease-in-out infinite;
+  will-change: transform;
+}
+.tut-pointer[data-side='left'] {
+  flex-direction: row;
+  translate: -100% -50%;
+  animation-name: tut-bounce-left;
+}
+.tut-pointer[data-side='left'] .tut-pointer-arrow {
+  margin: 0 0 0 2px;
+  border: 0;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-left: 20px solid #ffd23a;
+}
+@keyframes tut-bounce-left {
+  50% {
+    margin-left: -10px;
+  }
+}
+.tut-pointer[data-below='true'] {
+  flex-direction: column-reverse;
+  translate: -50% 0;
+}
+.tut-pointer-label {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ffd23a;
+  font: 700 12px/1.2 'Fredoka', system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  color: #3a2a00;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+.tut-pointer-arrow {
+  width: 0;
+  height: 0;
+  margin-top: 2px;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 20px solid #ffd23a;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35));
+}
+.tut-pointer[data-below='true'] .tut-pointer-arrow {
+  margin: 0 0 2px;
+  border-top: 0;
+  border-bottom: 20px solid #ffd23a;
+}
+@keyframes tut-bounce {
+  50% {
+    margin-top: -10px;
+  }
+}
+.tut-pointer[data-below='true'] {
+  animation-name: tut-bounce-up;
+}
+@keyframes tut-bounce-up {
+  50% {
+    margin-top: 10px;
+  }
+}
+/* The glowing ring round the button the guide wants you to press. */
+.tut-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 3px solid #ffd23a;
+  box-shadow: 0 0 0 3px rgba(255, 210, 58, 0.25), 0 0 18px rgba(255, 210, 58, 0.85);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  animation: tut-ring 1s ease-in-out infinite;
+}
+@keyframes tut-ring {
+  50% {
+    box-shadow: 0 0 0 7px rgba(255, 210, 58, 0.12), 0 0 28px rgba(255, 210, 58, 1);
+  }
+}
+/* Arrow on the screen edge toward an off-screen goal (points right at 0 rad). */
+.tut-edge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-top: 18px solid transparent;
+  border-bottom: 18px solid transparent;
+  border-left: 30px solid #ffd23a;
+  filter: drop-shadow(0 0 8px rgba(255, 210, 58, 0.8)) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.4));
+  transition: opacity 0.2s ease;
+}
+@media (max-height: 560px), (max-width: 720px) {
+  .tut-card {
+    top: 58px;
+  }
+  .tut-title {
+    font-size: 13px;
+  }
+}
+
+/* ---- Boxity chat bubbles over heads ---- */
+.chat-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: 200px;
+  padding: 5px 11px;
+  border-radius: 14px;
+  background: linear-gradient(#ffffff, #e6f5ff);
+  border: 2px solid #9fd8ff;
+  color: #14304f;
+  font: 600 14px/1.25 'Fredoka', system-ui, sans-serif;
+  text-align: center;
+  white-space: pre-line;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  transform: translate(-50%, -100%);
+  opacity: 0;
+  will-change: transform;
 }
